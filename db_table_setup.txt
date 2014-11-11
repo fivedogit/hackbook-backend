@@ -1,0 +1,11 @@
+hn2go_users
+	id (str)
+hn2go_notifications
+	id (str)
+	user_id-msfe (string,number)
+hn2go_hnitems
+	id (number)
+	url-time (string,number)
+	by-time (string,number)
+hn2go_globalvars
+	name (string)
