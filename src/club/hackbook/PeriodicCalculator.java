@@ -69,7 +69,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 		
 		// get user table size
 		// this isn't exact... updated hourly within Dynamo, but good enough.
-		TableDescription tableDescription = client.describeTable(new DescribeTableRequest().withTableName("hn2go_users")).getTable();
+		TableDescription tableDescription = client.describeTable(new DescribeTableRequest().withTableName("hackbook_users")).getTable();
 		long tablesize = tableDescription.getItemCount();
 		
 		// create a set of <limit> random longs
@@ -178,7 +178,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 		try {
 			credentials = new PropertiesCredentials(PeriodicCalculator.class.getClassLoader().getResourceAsStream("AwsCredentials.properties"));
 			AmazonDynamoDBClient client = new AmazonDynamoDBClient(credentials);
-			client.setRegion(Region.getRegion(Regions.US_WEST_1)); 
+			client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
 			DynamoDBMapperConfig dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
 			PeriodicCalculator pc = new PeriodicCalculator(mapper, dynamo_config, client);

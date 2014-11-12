@@ -26,7 +26,7 @@ import com.amazonaws.util.json.JSONObject;
 
 
 
-@DynamoDBTable(tableName="hn2go_notifications")
+@DynamoDBTable(tableName="hackbook_notifications")
 public class NotificationItem implements java.lang.Comparable<NotificationItem> {
 	
 	private String id; 

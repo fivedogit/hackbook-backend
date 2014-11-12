@@ -9,7 +9,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
-@DynamoDBTable(tableName="hn2go_hnitems")
+@DynamoDBTable(tableName="hackbook_hnitems")
 public class HNItemItem implements java.lang.Comparable<HNItemItem> {
 	
 	private long id; 

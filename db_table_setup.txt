@@ -1,11 +1,14 @@
-hn2go_users
+hackbook_users
 	id (str)
-hn2go_notifications
+	registered-since (number,number)
+hackbook_notifications
 	id (str)
 	user_id-msfe (string,number)
-hn2go_hnitems
+hackbook_hnitems
 	id (number)
 	url-time (string,number)
 	by-time (string,number)
-hn2go_globalvars
+hackbook_globalvars -- firebase_last_msfe, firebase_owner_id, random_users, most_followed_users, periodic_last_msfe
 	name (string)
+	
+	

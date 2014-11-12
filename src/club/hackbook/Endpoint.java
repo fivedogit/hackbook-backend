@@ -58,7 +58,7 @@ public class Endpoint extends HttpServlet {
 			//System.out.println("Initializing DynamoDBMapper from Endpoint.init()");
 			credentials = new PropertiesCredentials(getClass().getClassLoader().getResourceAsStream("AwsCredentials.properties"));
 			client = new AmazonDynamoDBClient(credentials);
-			client.setRegion(Region.getRegion(Regions.US_WEST_1)); 
+			client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
 			mapper = new DynamoDBMapper(client);
 			dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
 		} catch (IOException e) {
