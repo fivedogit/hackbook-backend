@@ -1,8 +1,8 @@
-#HN2GO backend source
+#Hackbook backend source
 
-HN2GO lets you follow other HN users and get notified when they do stuff.
+Hackbook adds follow, news feed and notification mechanisms to Hacker News
 
-HN2GO is not affiliated with or endorsed by HN or YCombinator
+Hackbook is not affiliated with or endorsed by HN or YCombinator
 
 ---------------
 

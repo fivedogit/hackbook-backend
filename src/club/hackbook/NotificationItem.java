@@ -1,4 +1,4 @@
-package com.hn2go;
+package club.hackbook;
 
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;

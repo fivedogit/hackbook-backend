@@ -16,13 +16,13 @@
   </welcome-file-list>
   <servlet>
     <servlet-name>Endpoint</servlet-name>
-    <servlet-class>com.hn2go.Endpoint</servlet-class>
+    <servlet-class>club.hackbook.Endpoint</servlet-class>
   </servlet>
   <servlet-mapping>
     <servlet-name>Endpoint</servlet-name>
     <url-pattern>/endpoint</url-pattern>
   </servlet-mapping>
   <listener>
-    <listener-class>com.hn2go.FirebaseListener</listener-class>
+    <listener-class>club.hackbook.FirebaseListener</listener-class>
 </listener>
  </web-app>

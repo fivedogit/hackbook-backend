@@ -1,5 +1,5 @@
 
-package com.hn2go;
+package club.hackbook;
 
 import java.io.IOException;
 import java.io.PrintWriter;
