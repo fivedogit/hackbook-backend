@@ -789,7 +789,7 @@ public class Endpoint extends HttpServlet {
 												 // (a) is registered and (b) has not already notified of this follow
 												 if(target_useritem.getRegistered()) // (a) registered
 												 {	
-													 System.out.println(target_useritem.getId() + " was found in the DB and is registered with hn2go.");
+													 System.out.println(target_useritem.getId() + " was found in the DB and is registered with Hackbook.");
 													 boolean already_notified = false;
 													 HashSet<String> notification_item_ts = (HashSet<String>)target_useritem.getNotificationIds();
 													 if(notification_item_ts == null || notification_item_ts.isEmpty())
@@ -842,7 +842,7 @@ public class Endpoint extends HttpServlet {
 												 }
 												 else
 												 {
-													 System.out.println(target_useritem.getId() + " was found in the DB but is NOT registered with hn2go.");
+													 System.out.println(target_useritem.getId() + " was found in the DB but is NOT registered with Hackbook.");
 												 }
 												 
 												 Set<String> followersset = target_useritem.getFollowers();
@@ -1039,7 +1039,7 @@ public class Endpoint extends HttpServlet {
 												 mapper.save(ili);
 											 }
 											 
-											 // look at the item being liked. Is the owner registered with hn2go? If so, notify them.
+											 // look at the item being liked. Is the owner registered with Hackbook? If so, notify them.
 											 HNItemItem hii = mapper.load(HNItemItem.class, item_id, dynamo_config);
 											 if(hii != null)
 											 {	 
@@ -1052,7 +1052,7 @@ public class Endpoint extends HttpServlet {
 													 // and has not already been notified (in the past 24h) that this user is following them in the past 
 													 if(target_useritem.getRegistered())
 													 {	
-														 System.out.println(target_useritem.getId() + " was found in the HN API and is registered with hn2go.");
+														 System.out.println(target_useritem.getId() + " was found in the HN API and is registered with Hackbook.");
 														 long now = System.currentTimeMillis();
 														 String now_str = Global.fromDecimalToBase62(7,now);
 														 Random generator = new Random(); 
@@ -1087,13 +1087,13 @@ public class Endpoint extends HttpServlet {
 													 }
 													 else
 													 {
-														 System.out.println(target_useritem.getId() + " was found in the HN API but is NOT registered with hn2go.");
+														 System.out.println(target_useritem.getId() + " was found in the HN API but is NOT registered with Hackbook.");
 													 }
 												 }
 											 }
 											 else
 											 {
-												 System.out.println("The item liked was not found in hn2go. This shouldn't happen (often) as all recent items will be seen by FirebaseListener.");
+												 System.out.println("The item liked was not found in Hackbook. This shouldn't happen (often) as all recent items will be seen by FirebaseListener.");
 											 }
 											 
 											 jsonresponse.put("response_status", "success");
