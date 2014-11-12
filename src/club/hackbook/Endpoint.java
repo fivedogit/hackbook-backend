@@ -50,7 +50,7 @@ public class Endpoint extends HttpServlet {
 	private AmazonDynamoDBClient client;
 	private DynamoDBMapper mapper;
 	private DynamoDBMapperConfig dynamo_config;
-	private boolean devel = false;
+	private boolean devel = true;
 	
 	public void init(ServletConfig servlet_config) throws ServletException
 	{
@@ -580,7 +580,8 @@ public class Endpoint extends HttpServlet {
 				  */
 				 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
 						 method.equals("followUser") || method.equals("unfollowUser") ||
-						 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") 
+						 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
+						 method.equals("resetNewsfeedCount")
 						 // || method.equals("noteItemLikeOrDislike") || method.equals("haveILikedThisItem") || method.equals("haveIDislikedThisItem")
 						 )
 				 {
@@ -700,6 +701,15 @@ public class Endpoint extends HttpServlet {
 										 jsonresponse.put("message", "Notification count successfully reset."); 
 										 jsonresponse.put("response_status", "success");
 										//System.out.println("Endpoint resetNotificationCount() end);
+									 }
+									 else if (method.equals("resetNewsfeedCount"))
+									 {
+										 //System.out.println("Endpoint resetNewsfeedCount() begin);
+										 useritem.setNewsfeedCount(0);
+										 mapper.save(useritem);
+										 jsonresponse.put("message", "Newsfeed count successfully reset."); 
+										 jsonresponse.put("response_status", "success");
+										//System.out.println("Endpoint resetNewsfeedCount() end);
 									 }
 									 else if (method.equals("removeItemFromNotificationIds"))
 									 {

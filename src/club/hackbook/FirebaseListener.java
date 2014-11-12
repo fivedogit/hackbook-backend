@@ -793,6 +793,7 @@ public class FirebaseListener implements ServletContextListener {
 	    	while(newsfeedset.size() > Global.NEWSFEED_SIZE_LIMIT)
 	    		newsfeedset.remove(newsfeedset.first());
 	    	useritem.setNewsfeedIds(newsfeedset);
+	    	useritem.setNewsfeedCount(useritem.getNewsfeedCount()+1);
 	    	mapper.save(useritem);
 		}
 		else
