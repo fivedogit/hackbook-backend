@@ -562,8 +562,10 @@ public class FirebaseListener implements ServletContextListener {
 				  
 				  mapper.save(hnii);
 				  
-				  if(processFeeds)
-				  {  
+				  long now = System.currentTimeMillis();
+				  if(processFeeds && ((hnii.getTime()*1000) > (now - 86400000))) 
+				  {
+					  //System.out.println("** Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " > cutoff=" + (now-86400000));
 					  if(hnii.getType().equals("comment") && !hnii.getDead() && !hnii.getDeleted())
 					  {
 						  processNewCommentForFeeds(hnii);
@@ -576,6 +578,10 @@ public class FirebaseListener implements ServletContextListener {
 					  {
 						  // deleted, dead or something other than comment/story (poll, for instance)
 					  }
+				  }
+				  else
+				  {
+					  //System.out.println("** NOT Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
 				  }
 				  return hnii;
     		}

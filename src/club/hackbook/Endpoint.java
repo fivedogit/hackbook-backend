@@ -50,7 +50,7 @@ public class Endpoint extends HttpServlet {
 	private AmazonDynamoDBClient client;
 	private DynamoDBMapper mapper;
 	private DynamoDBMapperConfig dynamo_config;
-	private boolean devel = true;
+	private boolean devel = false;
 	
 	public void init(ServletConfig servlet_config) throws ServletException
 	{
@@ -683,6 +683,15 @@ public class Endpoint extends HttpServlet {
 													 useritem.setURLCheckingMode("active");
 												 else // this is an error, default to 450
 													 useritem.setURLCheckingMode("stealth");
+												 mapper.save(useritem);
+												 jsonresponse.put("response_status", "success"); 
+											 }
+											 else if(which.equals("notification_mode")) 
+											 {
+												 if(value.equals("notifications_only"))
+													 useritem.setURLCheckingMode("notifications_only");
+												 else if(value.equals("newsfeed_and_notifications"))
+													 useritem.setURLCheckingMode("newsfeed_and_notifications");
 												 mapper.save(useritem);
 												 jsonresponse.put("response_status", "success"); 
 											 }

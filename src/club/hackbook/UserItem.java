@@ -51,6 +51,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private long hn_since;
 	private String hn_about;
 	private String url_checking_mode;
+	private String notification_mode;
 	private String hn_authtoken;
 	private boolean registered;
 	private Set<String> followers;
@@ -137,6 +138,10 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public String getURLCheckingMode() {return url_checking_mode; }  
 	public void setURLCheckingMode(String url_checking_mode) { this.url_checking_mode = url_checking_mode; }
 	
+	@DynamoDBAttribute(attributeName="notification_mode")  
+	public String getNotificationMode() {return notification_mode; }  
+	public void setNotificationMode(String notification_mode) { this.notification_mode = notification_mode; }
+	
 	@DynamoDBAttribute(attributeName="hn_profile")  
 	public String getHNProfile() {return hn_profile; }  
 	public void setHNProfile(String hn_profile) { this.hn_profile = hn_profile; }
@@ -189,6 +194,11 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 				user_jo.put("url_checking_mode", "stealth");
 			else
 				user_jo.put("url_checking_mode", getURLCheckingMode());
+			
+			if(getNotificationMode() == null || getNotificationMode().isEmpty())
+				user_jo.put("notification_mode", "newsfeed_and_notifications");
+			else
+				user_jo.put("notification_mode", getNotificationMode());
 			
 			user_jo.put("since", getSince());
 			user_jo.put("since_hr", sdf.format(getSince()));
