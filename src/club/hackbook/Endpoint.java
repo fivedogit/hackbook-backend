@@ -297,7 +297,6 @@ public class Endpoint extends HttpServlet {
 					String mode = request.getParameter("mode"); // "stealth", "active", "notifications_only"
 					if(url_str != null && !url_str.isEmpty())
 					{
-						System.out.println("0Trying " + url_str);
 						HashSet<HNItemItem> hnitems = getAllHNItemsFromURL(url_str, 0);
 						HNItemItem hnii = null;
 						if(hnitems == null)
@@ -603,17 +602,21 @@ public class Endpoint extends HttpServlet {
 									if (method.equals("getUserSelf")) // I think this might be redundant (or maybe the one below is)
 									{
 										JSONObject user_jo = null;
-										useritem.setThisAccessTokenExpires(timestamp_at_entry + 31556900000L); // why extend the expiration?
-										Calendar cal = Calendar.getInstance();
-										long now = cal.getTimeInMillis();
-										useritem.setSeen(now);
-										SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-										sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
-										useritem.setSeenHumanReadable(sdf.format(timestamp_at_entry));
-										useritem.setLastIPAddress(request.getRemoteAddr()); // necessary for spam and contest fraud prevention
+										long now = System.currentTimeMillis();
 										
+										boolean something_needs_updating = false;
+										if(now - useritem.getSeen() > 600000) // if it's been > 10 mins since last "seen" update, update it
+										{
+											something_needs_updating = true;
+											useritem.setSeen(now);
+											SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+											sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+											useritem.setSeenHumanReadable(sdf.format(timestamp_at_entry));
+											useritem.setLastIPAddress(request.getRemoteAddr()); // necessary for spam and contest fraud prevention
+										}
 										if(now - useritem.getLastKarmaCheck() > 3600000) // if it's been an hour since last karma check, check it again
 										{
+											something_needs_updating = true;
 											try{
 												String result = Jsoup
 													 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
@@ -629,9 +632,10 @@ public class Endpoint extends HttpServlet {
 											catch(JSONException jsone){
 												//
 											}
+											useritem.setLastKarmaCheck(now); // whether or not the above worked, act like it did to prevent repetitive karma checks
 										}
-										useritem.setLastKarmaCheck(now); // whether or not the above worked, act like it did to prevent repetitive karma checks
-										mapper.save(useritem);
+										if(something_needs_updating)
+											mapper.save(useritem);
 										
 										boolean get_this_access_token = true; 
 										boolean get_notification_ids = true; 
