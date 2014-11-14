@@ -1,4 +1,3 @@
-
 package club.hackbook;
 
 import java.io.IOException;
@@ -40,175 +39,185 @@ import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-
 public class Endpoint extends HttpServlet {
-	
+
 	// static variables:
 	private static final long serialVersionUID = 1L;
-	
+
 	private AWSCredentials credentials;
 	private AmazonDynamoDBClient client;
 	private DynamoDBMapper mapper;
 	private DynamoDBMapperConfig dynamo_config;
 	private boolean devel = false;
-	
-	public void init(ServletConfig servlet_config) throws ServletException
-	{
+
+	public void init(ServletConfig servlet_config) throws ServletException {
 		try {
-			//System.out.println("Initializing DynamoDBMapper from Endpoint.init()");
-			credentials = new PropertiesCredentials(getClass().getClassLoader().getResourceAsStream("AwsCredentials.properties"));
+			// System.out.println("Initializing DynamoDBMapper from Endpoint.init()");
+			credentials = new PropertiesCredentials(getClass().getClassLoader()
+					.getResourceAsStream("AwsCredentials.properties"));
 			client = new AmazonDynamoDBClient(credentials);
-			client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
+			client.setRegion(Region.getRegion(Regions.US_EAST_1));
 			mapper = new DynamoDBMapper(client);
-			dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
+			dynamo_config = new DynamoDBMapperConfig(
+					DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		super.init(servlet_config);
 	}
-	
-	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
-	{
+
+	public void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		response.setContentType("application/json; charset=UTF-8;");
-		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
+		response.setHeader("Access-Control-Allow-Origin", "*"); // FIXME
 		PrintWriter out = response.getWriter();
 		JSONObject jsonresponse = new JSONObject();
-		try
-		{
+		try {
 			jsonresponse.put("response_status", "error");
 			jsonresponse.put("message", "This endpoint doesn't speak POST.");
 			out.println(jsonresponse);
-		}
-		catch(JSONException jsone)
-		{
+		} catch (JSONException jsone) {
 			out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint POST\"}");
-			System.err.println("endpoint: JSONException thrown in doPost(). " + jsone.getMessage());
-		}		
-		return; 	
+			System.err.println("endpoint: JSONException thrown in doPost(). "
+					+ jsone.getMessage());
+		}
+		return;
 	}
 
 	// error codes:
 	// 0000 = delete everything
 	// 0001 = delete social token
-	
+
 	// this method queries for all 4 equal permutations of the incoming url
-	private HashSet<HNItemItem> getAllHNItemsFromURL(String url_str, int minutes_ago)
-	{
+	private HashSet<HNItemItem> getAllHNItemsFromURL(String url_str,
+			int minutes_ago) {
 		HashSet<HNItemItem> tempset = null;
 		HashSet<HNItemItem> combinedset = new HashSet<HNItemItem>();
 		tempset = getHNItemsFromURL(url_str, minutes_ago);
-		if(tempset != null)
-		{
+		if (tempset != null) {
 			combinedset.addAll(tempset); // as-is
 			tempset = null;
 		}
-		
-		// ideally, we'd try with/without slash on all the permutations below. But that turns 4 lookups into 8, so let's just do the as-is +/- slash
-		if(!url_str.endsWith("/"))
-		{	
-			tempset = getHNItemsFromURL(url_str + "/", minutes_ago); // as-is + trailing "/"
-			if(tempset != null)
-			{
-				combinedset.addAll(tempset); 
+
+		// ideally, we'd try with/without slash on all the permutations below.
+		// But that turns 4 lookups into 8, so let's just do the as-is +/- slash
+		if (!url_str.endsWith("/")) {
+			tempset = getHNItemsFromURL(url_str + "/", minutes_ago); // as-is +
+																		// trailing
+																		// "/"
+			if (tempset != null) {
+				combinedset.addAll(tempset);
+				tempset = null;
+			}
+		} else {
+			String url_str_minus_trailing_slash = url_str.substring(0,
+					url_str.length() - 1);
+			tempset = getHNItemsFromURL(url_str_minus_trailing_slash,
+					minutes_ago); // as-is minus trailing "/"
+			if (tempset != null) {
+				combinedset.addAll(tempset);
 				tempset = null;
 			}
 		}
-		else
-		{
-			String url_str_minus_trailing_slash = url_str.substring(0, url_str.length() - 1);
-			tempset = getHNItemsFromURL(url_str_minus_trailing_slash, minutes_ago); // as-is minus trailing "/"
-			if(tempset != null)
+		if (url_str.startsWith("https://")) {
+			if (url_str.startsWith("https://www.")) // https & www.
 			{
-				combinedset.addAll(tempset); 
-				tempset = null;
-			}
-		}
-		if(url_str.startsWith("https://"))
-		{
-			if(url_str.startsWith("https://www.")) // https & www.
+				tempset = getHNItemsFromURL("http://" + url_str.substring(12),
+						minutes_ago); // try http && !www
+				if (tempset != null) {
+					combinedset.addAll(tempset); // try http && !www
+					tempset = null;
+				}
+				tempset = getHNItemsFromURL("https://" + url_str.substring(12),
+						minutes_ago); // try https && !www
+				if (tempset != null) {
+					combinedset.addAll(tempset); // try http && !www
+					tempset = null;
+				}
+				tempset = getHNItemsFromURL(
+						"http://www." + url_str.substring(12), minutes_ago); // try
+																				// http
+																				// &&
+																				// www
+				if (tempset != null) {
+					combinedset.addAll(tempset); // try http && !www
+					tempset = null;
+				}
+			} else if (!url_str.startsWith("https://www.")) // https & !www.
 			{
-				tempset = getHNItemsFromURL("http://" + url_str.substring(12), minutes_ago); // try http && !www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL("http://" + url_str.substring(8),
+						minutes_ago); // try http && !www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("https://" + url_str.substring(12), minutes_ago); // try https && !www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL(
+						"http://www." + url_str.substring(8), minutes_ago); // try
+																			// http
+																			// &&
+																			// www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("http://www." + url_str.substring(12), minutes_ago); // try http && www
-				if(tempset != null)
-				{
-					combinedset.addAll(tempset); // try http && !www
-					tempset = null;
-				}
-			}
-			else if(!url_str.startsWith("https://www.")) // https & !www.
-			{
-				tempset = getHNItemsFromURL("http://" + url_str.substring(8), minutes_ago); // try http && !www
-				if(tempset != null)
-				{
-					combinedset.addAll(tempset); // try http && !www
-					tempset = null;
-				}
-				tempset = getHNItemsFromURL("http://www." + url_str.substring(8), minutes_ago); // try http && www
-				if(tempset != null)
-				{
-					combinedset.addAll(tempset); // try http && !www
-					tempset = null;
-				}
-				tempset = getHNItemsFromURL("https://www." + url_str.substring(8), minutes_ago); // try https && www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL(
+						"https://www." + url_str.substring(8), minutes_ago); // try
+																				// https
+																				// &&
+																				// www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
 			}
-		}
-		else if(url_str.startsWith("http://"))
-		{
-			if(url_str.startsWith("http://www.")) // http & www.
+		} else if (url_str.startsWith("http://")) {
+			if (url_str.startsWith("http://www.")) // http & www.
 			{
-				tempset = getHNItemsFromURL("http://" + url_str.substring(11), minutes_ago); // try http && !www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL("http://" + url_str.substring(11),
+						minutes_ago); // try http && !www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("https://" + url_str.substring(11), minutes_ago); // try https && !www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL("https://" + url_str.substring(11),
+						minutes_ago); // try https && !www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("https://www." + url_str.substring(11), minutes_ago); // try https && www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL(
+						"https://www." + url_str.substring(11), minutes_ago); // try
+																				// https
+																				// &&
+																				// www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-			}
-			else if(!url_str.startsWith("http://www.")) // http & !www.
+			} else if (!url_str.startsWith("http://www.")) // http & !www.
 			{
-				tempset = getHNItemsFromURL("http://www." + url_str.substring(7), minutes_ago); // try http && www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL(
+						"http://www." + url_str.substring(7), minutes_ago); // try
+																			// http
+																			// &&
+																			// www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("https://www." + url_str.substring(7), minutes_ago); // try https && www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL(
+						"https://www." + url_str.substring(7), minutes_ago); // try
+																				// https
+																				// &&
+																				// www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
-				tempset = getHNItemsFromURL("https://" + url_str.substring(7), minutes_ago); // try https && !www
-				if(tempset != null)
-				{
+				tempset = getHNItemsFromURL("https://" + url_str.substring(7),
+						minutes_ago); // try https && !www
+				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
@@ -216,50 +225,49 @@ public class Endpoint extends HttpServlet {
 		}
 		return combinedset;
 	}
-	
-	private HashSet<HNItemItem> getHNItemsFromURL(String url_str, int minutes_ago)
-	{
+
+	private HashSet<HNItemItem> getHNItemsFromURL(String url_str,
+			int minutes_ago) {
 		DynamoDBQueryExpression<HNItemItem> queryExpression = new DynamoDBQueryExpression<HNItemItem>()
-				.withIndexName("url-time-index")
-				.withScanIndexForward(true)
+				.withIndexName("url-time-index").withScanIndexForward(true)
 				.withConsistentRead(false);
-	        
+
 		// set the user_id part
 		HNItemItem key = new HNItemItem();
 		key.setURL(url_str);
 		queryExpression.setHashKeyValues(key);
-		
+
 		// set the time range part
-		if(minutes_ago > 0)
-		{
-			//System.out.println("Getting comment children with a valid cutoff time.");
+		if (minutes_ago > 0) {
+			// System.out.println("Getting comment children with a valid cutoff time.");
 			Calendar cal = Calendar.getInstance();
 			cal.add(Calendar.MINUTE, (minutes_ago * -1));
 			long msfe_cutoff = cal.getTimeInMillis();
 			// set the msfe range part
 			Map<String, Condition> keyConditions = new HashMap<String, Condition>();
-			keyConditions.put("time",new Condition()
-			.withComparisonOperator(ComparisonOperator.GT)
-			.withAttributeValueList(new AttributeValue().withN(new Long(msfe_cutoff).toString())));
+			keyConditions.put(
+					"time",
+					new Condition().withComparisonOperator(
+							ComparisonOperator.GT).withAttributeValueList(
+							new AttributeValue().withN(new Long(msfe_cutoff)
+									.toString())));
 			queryExpression.setRangeKeyConditions(keyConditions);
-		}	
+		}
 
 		// execute
-		List<HNItemItem> items = mapper.query(HNItemItem.class, queryExpression, dynamo_config);
-		if(items != null && items.size() > 0)
-		{	
+		List<HNItemItem> items = mapper.query(HNItemItem.class,
+				queryExpression, dynamo_config);
+		if (items != null && items.size() > 0) {
 			HashSet<HNItemItem> returnset = new HashSet<HNItemItem>();
 			for (HNItemItem item : items) {
 				returnset.add(item);
 			}
 			return returnset;
-		}
-		else
-		{
+		} else {
 			return null;
 		}
 	}
-	
+
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
 		//System.out.println("endpoint.doGet(): entering...");
@@ -427,107 +435,126 @@ public class Endpoint extends HttpServlet {
 							JSONObject hn_user_jo = null;
 							while(x < limit)
 							{
-								result = Jsoup
-										 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
-										 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
-										 .ignoreContentType(true).execute().body();
-								//System.out.println("Endpoint.verifyHNUser():" + result);
-								hn_user_jo = new JSONObject(result);
-								about = hn_user_jo.getString("about");
-								bi = about.indexOf("BEGIN|");
-								if(bi != -1)                                   // entering here means the loop WILL break 1 of 3 ways: No |ENDTOKEN, match or no match.
+								try
 								{
-									ei = about.indexOf("|END");
-									if(ei == -1)
+									result = Jsoup
+											 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
+											 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
+											 .ignoreContentType(true).execute().body();
+									
+									//System.out.println("Endpoint.verifyHNUser():" + result);
+									hn_user_jo = new JSONObject(result);
+									about = hn_user_jo.getString("about");
+									bi = about.indexOf("BEGIN|");
+									if(bi != -1)                                   // entering here means the loop WILL break 1 of 3 ways: No |ENDTOKEN, match or no match.
 									{
-										jsonresponse.put("response_status", "error");
-										jsonresponse.put("message", "Found \"BEGIN|\" but not \"|END\"");
-										break;
+										ei = about.indexOf("|END");
+										if(ei == -1)
+										{
+											jsonresponse.put("response_status", "error");
+											jsonresponse.put("message", "Found \"BEGIN|\" but not \"|END\"");
+											break;
+										}
+										else
+										{
+											checked_uuid = about.substring(bi + 6, ei);
+											if(checked_uuid.equals(stored_uuid))
+											{	
+												SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+												sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+												
+												String uuid_str = UUID.randomUUID().toString().replaceAll("-","");
+												Calendar cal = Calendar.getInstance();
+												long now = cal.getTimeInMillis();
+												cal.add(Calendar.YEAR, 1);
+												long future = cal.getTimeInMillis();
+												if(!useritem.getRegistered()) // if user is not yet registered, populate default values
+												{
+													useritem = new UserItem();
+													//useritem.setNotificationIds();
+													useritem.setNotificationCount(0);
+													useritem.setOnDislike("button");
+													useritem.setOnLike("button");
+													useritem.setOnReply("button");
+													useritem.setPermissionLevel("user");
+													useritem.setId(screenname);
+													useritem.setSince(now);
+													useritem.setSinceHumanReadable(sdf.format(now));
+													useritem.setRegistered(true);
+													useritem.setURLCheckingMode("stealth");
+												}
+												useritem.setLastIPAddress(request.getRemoteAddr());
+												useritem.setSeen(now);
+												useritem.setSeenHumanReadable(sdf.format(now));
+												useritem.setThisAccessToken(uuid_str);
+												useritem.setThisAccessTokenExpires(future);
+												useritem.setHNAuthToken(null);
+												
+												if(hn_user_jo.has("karma")) 
+												{	
+													hn_karma_str = hn_user_jo.getString("karma");
+													if(Global.isWholeNumeric(hn_karma_str))
+														useritem.setHNKarma(Integer.parseInt(hn_karma_str));
+													else
+														useritem.setHNKarma(0); // if "karma" is somehow not a whole integer, set to 0
+												}
+												else
+													useritem.setHNKarma(0); // if "karma" is somehow missing, set to 0
+												useritem.setLastKarmaCheck(now);
+
+												if(hn_user_jo.has("created")) 
+												{	
+													hn_since_str = hn_user_jo.getString("created");
+													if(Global.isWholeNumeric(hn_since_str))
+														useritem.setHNSince(Integer.parseInt(hn_since_str));
+													else
+														useritem.setHNSince(0); // if "karma" is somehow not a whole integer, set to 0
+												}
+												else
+													useritem.setHNSince(0); // if "karma" is somehow missing, set to 0
+												
+												mapper.save(useritem);
+												
+												//System.out.println("Endpoint.loginWithGoogleOrShowRegistration() user already registered, logging in");
+												jsonresponse.put("response_status", "success");
+												jsonresponse.put("verified", true);
+												jsonresponse.put("this_access_token", uuid_str);
+												jsonresponse.put("screenname", useritem.getId());
+												break;
+											}
+											else
+											{
+												System.out.println("Loop " + x + ", Found BEGIN| and |END, but the string didn't match the DB. Trying again in 5 seconds.");
+												try {
+													java.lang.Thread.sleep(5000);
+												} catch (InterruptedException e) {
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+												x++;
+											}
+										}
 									}
 									else
 									{
-										checked_uuid = about.substring(bi + 6, ei);
-										if(checked_uuid.equals(stored_uuid))
-										{	
-											SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-											sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
-											
-											String uuid_str = UUID.randomUUID().toString().replaceAll("-","");
-											Calendar cal = Calendar.getInstance();
-											long now = cal.getTimeInMillis();
-											cal.add(Calendar.YEAR, 1);
-											long future = cal.getTimeInMillis();
-											if(!useritem.getRegistered()) // if user is not yet registered, populate default values
-											{
-												useritem = new UserItem();
-												//useritem.setNotificationIds();
-												useritem.setNotificationCount(0);
-												useritem.setOnDislike("button");
-												useritem.setOnLike("button");
-												useritem.setOnReply("button");
-												useritem.setPermissionLevel("user");
-												useritem.setId(screenname);
-												useritem.setSince(now);
-												useritem.setSinceHumanReadable(sdf.format(now));
-												useritem.setRegistered(true);
-												useritem.setURLCheckingMode("stealth");
-											}
-											useritem.setLastIPAddress(request.getRemoteAddr());
-											useritem.setSeen(now);
-											useritem.setSeenHumanReadable(sdf.format(now));
-											useritem.setThisAccessToken(uuid_str);
-											useritem.setThisAccessTokenExpires(future);
-											useritem.setHNAuthToken(null);
-											
-											if(hn_user_jo.has("karma")) 
-											{	
-												hn_karma_str = hn_user_jo.getString("karma");
-												if(Global.isWholeNumeric(hn_karma_str))
-													useritem.setHNKarma(Integer.parseInt(hn_karma_str));
-												else
-													useritem.setHNKarma(0); // if "karma" is somehow not a whole integer, set to 0
-											}
-											else
-												useritem.setHNKarma(0); // if "karma" is somehow missing, set to 0
-											useritem.setLastKarmaCheck(now);
-
-											if(hn_user_jo.has("created")) 
-											{	
-												hn_since_str = hn_user_jo.getString("created");
-												if(Global.isWholeNumeric(hn_since_str))
-													useritem.setHNSince(Integer.parseInt(hn_since_str));
-												else
-													useritem.setHNSince(0); // if "karma" is somehow not a whole integer, set to 0
-											}
-											else
-												useritem.setHNSince(0); // if "karma" is somehow missing, set to 0
-											
-											mapper.save(useritem);
-											
-											//System.out.println("Endpoint.loginWithGoogleOrShowRegistration() user already registered, logging in");
-											jsonresponse.put("response_status", "success");
-											jsonresponse.put("verified", true);
-											jsonresponse.put("this_access_token", uuid_str);
-											jsonresponse.put("screenname", useritem.getId());
-											break;
+										System.out.println("Loop " + x + ", Did not find BEGIN| or |END. Trying again in 5 seconds.");
+										try {
+											java.lang.Thread.sleep(5000);
+										} catch (InterruptedException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
 										}
-										// else check again. If we found begin/end but no match, then that means maybe the user tried, failed and is trying again. Just keep checking until timeout.
+										x++;
 									}
 								}
-								else
+								catch(IOException ioe)
 								{
-									try {
-										java.lang.Thread.sleep(5000);
-									} catch (InterruptedException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-									x++;
+									System.err.println("IOException attempting to verifyHNUser. Ignore and continue.");
 								}
-							
 							}
 							if(x == limit)
 							{
+								System.out.println("Checked " + limit + " times and failed. Returning response_status = error.");
 								jsonresponse.put("response_status", "error");
 								jsonresponse.put("message", "Checked " + limit + " times and didn't find \"BEGIN|\"");
 							}
@@ -1209,57 +1236,53 @@ public class Endpoint extends HttpServlet {
 		}		
 		return; 	
 	}
-	
-	public UserItem getUserInDBCreatingIfNotAndFoundWithinHNAPI(String target_screenname)
-	{
-		UserItem target_useritem = mapper.load(UserItem.class, target_screenname, dynamo_config);
-		if(target_useritem == null) // not in local db, try hacker news API
+
+	public UserItem getUserInDBCreatingIfNotAndFoundWithinHNAPI(
+			String target_screenname) {
+		UserItem target_useritem = mapper.load(UserItem.class,
+				target_screenname, dynamo_config);
+		if (target_useritem == null) // not in local db, try hacker news API
 		{
-			 try{
-				 Response r = Jsoup
-						 .connect("https://hacker-news.firebaseio.com/v0/user/" + target_screenname  + ".json")
-						 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
-						 .ignoreContentType(true).execute();
-				  // if r failed, we skip to the catch rather than creating a user
-				  String result = r.body();
-				  if(result == null || result.trim().isEmpty() || result.trim().equals("null"))
-				  { 
-					  return null;
-				  }
-				  else
-				  { 
-					  target_useritem = new UserItem();
-					  target_useritem.setHNProfile(result);
-					  JSONObject profile_jo = new JSONObject(result);
-					  target_useritem.setHNKarma(profile_jo.getInt("karma"));
-					  target_useritem.setLastKarmaCheck(System.currentTimeMillis());
-					  target_useritem.setHNSince(profile_jo.getLong("created"));
-					  target_useritem.setId(profile_jo.getString("id"));
-					  target_useritem.setRegistered(false);
-					  target_useritem.setURLCheckingMode("stealth");
-					  if(profile_jo.has("about"))
-						  target_useritem.setHNAbout(profile_jo.getString("about"));
-					  else
-						  target_useritem.setHNAbout("");
-					  mapper.save(target_useritem);
-					  return target_useritem;
-				  }
-			 }
-			 catch(IOException ioe)
-			 {
-				 return null;
-			 }
-			 catch(JSONException jsone)
-			 {
-				 return null;
-			 }
-		 }
-		 else 
-		 {
+			try {
+				Response r = Jsoup
+						.connect(
+								"https://hacker-news.firebaseio.com/v0/user/"
+										+ target_screenname + ".json")
+						.userAgent(
+								"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
+						.ignoreContentType(true).execute();
+				// if r failed, we skip to the catch rather than creating a user
+				String result = r.body();
+				if (result == null || result.trim().isEmpty()
+						|| result.trim().equals("null")) {
+					return null;
+				} else {
+					target_useritem = new UserItem();
+					target_useritem.setHNProfile(result);
+					JSONObject profile_jo = new JSONObject(result);
+					target_useritem.setHNKarma(profile_jo.getInt("karma"));
+					target_useritem.setLastKarmaCheck(System
+							.currentTimeMillis());
+					target_useritem.setHNSince(profile_jo.getLong("created"));
+					target_useritem.setId(profile_jo.getString("id"));
+					target_useritem.setRegistered(false);
+					target_useritem.setURLCheckingMode("stealth");
+					if (profile_jo.has("about"))
+						target_useritem.setHNAbout(profile_jo
+								.getString("about"));
+					else
+						target_useritem.setHNAbout("");
+					mapper.save(target_useritem);
+					return target_useritem;
+				}
+			} catch (IOException ioe) {
+				return null;
+			} catch (JSONException jsone) {
+				return null;
+			}
+		} else {
 			return target_useritem;
-		 }
+		}
 	}
-	
-    
-	
+
 }
