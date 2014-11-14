@@ -511,12 +511,7 @@ public class Endpoint extends HttpServlet {
 											jsonresponse.put("screenname", useritem.getId());
 											break;
 										}
-										else
-										{
-											jsonresponse.put("response_status", "error");
-											jsonresponse.put("message", "Found \"BEGIN|\" and \"|END\" but they did not match.");
-											break;
-										}
+										// else check again. If we found begin/end but no match, then that means maybe the user tried, failed and is trying again. Just keep checking until timeout.
 									}
 								}
 								else
