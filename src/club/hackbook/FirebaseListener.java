@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -51,6 +52,7 @@ public class FirebaseListener implements ServletContextListener {
     private String myId = ""; 
     GlobalvarItem firebase_owner_id_gvi = null;
     GlobalvarItem firebase_last_msfe_gvi = null;
+    Doer doer = null;
     
     @SuppressWarnings("unchecked")
     @Override
@@ -62,6 +64,7 @@ public class FirebaseListener implements ServletContextListener {
     		client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
     		mapper = new DynamoDBMapper(client);
     		dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
+    		doer = new Doer();
     	} catch (IOException e) {
     		e.printStackTrace();
     	}
@@ -511,14 +514,27 @@ public class FirebaseListener implements ServletContextListener {
     		// without them, we can't even make sense of what to do with it
     		if(new_jo.has("id") && new_jo.has("by") && new_jo.has("time") && new_jo.has("type")) 
     		{
-				  /*** THESE FIELDS MUST MATCH HNItemItem2 EXACTLY ***/
+				  /*** THESE FIELDS MUST MATCH HNItemItem EXACTLY ***/
 				  
+    			/*
+    private long id; 
+	private String by;
+	private long time;
+	private String type;
+	private boolean dead;
+	private boolean deleted;
+	private long parent;
+	private long score;
+	private Set<Long> kids;
+	private String url;
+    			 */
+    			
 				  hnii = new HNItemItem();
 				  hnii.setId(new_jo.getLong("id"));
 				  // new fields
 				  hnii.setBy(new_jo.getString("by"));
-				  hnii.setType(new_jo.getString("type"));
 				  hnii.setTime(new_jo.getLong("time"));
+				  hnii.setType(new_jo.getString("type"));
 				 
 				  if(new_jo.has("dead") && new_jo.getBoolean("dead") == true)
 					  hnii.setDead(true);
@@ -583,6 +599,8 @@ public class FirebaseListener implements ServletContextListener {
 				  {
 					  //System.out.println("** NOT Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
 				  }
+				  
+				 
 				  return hnii;
     		}
     		else

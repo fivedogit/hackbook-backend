@@ -69,7 +69,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 		
 		// get user table size
 		// this isn't exact... updated hourly within Dynamo, but good enough.
-		TableDescription tableDescription = client.describeTable(new DescribeTableRequest().withTableName("hackbook_users")).getTable();
+		TableDescription tableDescription = client.describeTable(new DescribeTableRequest().withTableName("hackbook_users2")).getTable();
 		long tablesize = tableDescription.getItemCount();
 		
 		// create a set of <limit> random longs

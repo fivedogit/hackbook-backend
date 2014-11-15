@@ -16,7 +16,6 @@ public class HNItemItem implements java.lang.Comparable<HNItemItem> {
 	private String by;
 	private long time;
 	private String type;
-	//private String object;
 	private boolean dead;
 	private boolean deleted;
 	private long parent;
@@ -67,10 +66,6 @@ public class HNItemItem implements java.lang.Comparable<HNItemItem> {
 	public String getURL() {return url; }
 	public void setURL(String url) { this.url = url; }
 	
-	/*@DynamoDBAttribute(attributeName="object") 
-	public String getObject() {return object; }
-	public void setObject(String object) { this.object = object; }*/
-
 	@DynamoDBIgnore
 	public int compareTo(HNItemItem o) // this makes more recent comments come first
 	{

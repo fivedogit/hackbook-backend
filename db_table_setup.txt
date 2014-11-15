@@ -1,4 +1,4 @@
-hackbook_users
+hackbook_users2
 	id (str)
 	registered-since (number,number)
 hackbook_notifications
