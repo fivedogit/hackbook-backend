@@ -56,6 +56,15 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private boolean registered;
 	private Set<String> followers;
 	private Set<String> following;
+	private boolean hide_hn_new;
+	private boolean hide_hn_threads;
+	private boolean hide_hn_comments;
+	private boolean hide_hn_show;
+	private boolean hide_hn_ask;
+	private boolean hide_hn_jobs;
+	private boolean hide_hn_submit;
+	private boolean hide_hn_feed;
+	private boolean hide_hn_notifications;
 	
 	@DynamoDBHashKey(attributeName="id") 
 	public String getId() {return id; }
@@ -167,6 +176,42 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public Set<String> getFollowing() { return following; }
 	public void setFollowing(Set<String> following) { this.following = following; }
 	
+	@DynamoDBAttribute(attributeName="hide_hn_new")
+	public boolean getHideHNNew() {return hide_hn_new; }  
+	public void setHideHNNew(boolean hide_hn_new) { this.hide_hn_new = hide_hn_new; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_threads")
+	public boolean getHideHNThreads() {return hide_hn_threads; }  
+	public void setHideHNThreads(boolean hide_hn_threads) { this.hide_hn_threads = hide_hn_threads; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_comments")
+	public boolean getHideHNComments() {return hide_hn_comments; }  
+	public void setHideHNComments(boolean hide_hn_comments) { this.hide_hn_comments = hide_hn_comments; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_show")
+	public boolean getHideHNShow() {return hide_hn_show; }  
+	public void setHideHNShow(boolean hide_hn_show) { this.hide_hn_show = hide_hn_show; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_jobs")
+	public boolean getHideHNJobs() {return hide_hn_jobs; }  
+	public void setHideHNJobs(boolean hide_hn_jobs) { this.hide_hn_jobs = hide_hn_jobs; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_ask")
+	public boolean getHideHNAsk() {return hide_hn_ask; }  
+	public void setHideHNAsk(boolean hide_hn_ask) { this.hide_hn_ask = hide_hn_ask; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_submit")
+	public boolean getHideHNSubmit() {return hide_hn_submit; }  
+	public void setHideHNSubmit(boolean hide_hn_submit) { this.hide_hn_submit = hide_hn_submit; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_feed")
+	public boolean getHideHNFeed() {return hide_hn_feed; }  
+	public void setHideHNFeed(boolean hide_hn_feed) { this.hide_hn_feed = hide_hn_feed; }
+	
+	@DynamoDBAttribute(attributeName="hide_hn_notifications")
+	public boolean getHideHNNotifications() {return hide_hn_notifications; }  
+	public void setHideHNNotifications(boolean hide_hn_notifications) { this.hide_hn_notifications = hide_hn_notifications; }
+	
 	@DynamoDBIgnore
 	public boolean isValid(String inc_this_access_token)
 	{
@@ -205,6 +250,16 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			
 			user_jo.put("hn_karma", getHNKarma());
 			user_jo.put("hn_since", getHNSince());
+			
+			user_jo.put("hide_hn_new", getHideHNNew());
+			user_jo.put("hide_hn_threads", getHideHNThreads());
+			user_jo.put("hide_hn_comments", getHideHNComments());
+			user_jo.put("hide_hn_ask", getHideHNAsk());
+			user_jo.put("hide_hn_show", getHideHNShow());
+			user_jo.put("hide_hn_jobs", getHideHNJobs());
+			user_jo.put("hide_hn_submit", getHideHNSubmit());
+			user_jo.put("hide_hn_feed", getHideHNFeed());
+			user_jo.put("hide_hn_notifications", getHideHNNotifications());
 			
 			if(getFollowing() != null)
 				user_jo.put("following", getFollowing());

@@ -681,7 +681,42 @@ public class Endpoint extends HttpServlet {
 										 else
 										 {	 
 											 jsonresponse.put("response_status", "success"); // default to success, then overwrite with error if necessary
-											 if(which.equals("onreply") || which.equals("onlike") 
+											 if(which.equals("hide_hn_new") || which.equals("hide_hn_threads") || which.equals("hide_hn_comments") || which.equals("hide_hn_show") ||
+													 which.equals("hide_hn_ask") || which.equals("hide_hn_jobs") || which.equals("hide_hn_submit") || which.equals("hide_hn_feed")  || which.equals("hide_hn_notifications"))
+											 {
+												 if(value.equals("show") || value.equals("hide"))
+												 {
+													 boolean yo = true;
+													 if(value.equals("hide"))
+														 yo = false;
+													 if(which.equals("hide_hn_new"))
+														 useritem.setHideHNNew(yo);
+													 else if(which.equals("hide_hn_threads"))
+														 useritem.setHideHNThreads(yo);
+													 else if(which.equals("hide_hn_comments"))
+														 useritem.setHideHNComments(yo);
+													 else if(which.equals("hide_hn_show"))
+														 useritem.setHideHNShow(yo);
+													 else if(which.equals("hide_hn_ask"))
+														 useritem.setHideHNAsk(yo);
+													 else if(which.equals("hide_hn_jobs"))
+														 useritem.setHideHNJobs(yo);
+													 else if(which.equals("hide_hn_submit"))
+														 useritem.setHideHNSubmit(yo);
+													 else if(which.equals("hide_hn_feed"))
+														 useritem.setHideHNFeed(yo);
+													 else if(which.equals("hide_hn_notifications"))
+														 useritem.setHideHNNotifications(yo);
+													 mapper.save(useritem);	
+													 jsonresponse.put("response_status", "success"); 
+												 }
+												 else
+												 {
+													 jsonresponse.put("message", "Invalid value.");
+													 jsonresponse.put("response_status", "error");
+												 }
+											 }
+											 else if(which.equals("onreply") || which.equals("onlike") 
 													 || which.equals("ondislike"))
 											 {
 												 if(value.equals("button") || value.equals("do nothing"))
