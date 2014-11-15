@@ -25,7 +25,7 @@ import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
-@DynamoDBTable(tableName="hackbook_users")
+@DynamoDBTable(tableName="hackbook_users2")
 public class UserItem implements java.lang.Comparable<UserItem> {
 
 	// static parts of the database entry
@@ -75,7 +75,6 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public void setPermissionLevel(String permission_level) { this.permission_level = permission_level; }
 	
 	@DynamoDBAttribute(attributeName="since")  
-	@DynamoDBIndexRangeKey(attributeName="since", globalSecondaryIndexName="registered-since-index")
 	public long getSince() {return since; }
 	public void setSince(long since) { this.since = since; }
 	
@@ -84,6 +83,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public void setHNSince(long hn_since) { this.hn_since = hn_since; }
 	
 	@DynamoDBAttribute(attributeName="seen")  
+	@DynamoDBIndexRangeKey(attributeName="since", globalSecondaryIndexName="registered-seen-index")
 	public long getSeen() {return seen; }
 	public void setSeen(long seen) { this.seen = seen; }
 	
@@ -164,7 +164,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public void setHNAuthToken(String hn_authtoken) { this.hn_authtoken = hn_authtoken; }
 	
 	@DynamoDBAttribute(attributeName="registered")
-	@DynamoDBIndexHashKey(attributeName="registered", globalSecondaryIndexName="registered-since-index") 
+	@DynamoDBIndexHashKey(attributeName="registered", globalSecondaryIndexName="registered-seen-index") 
 	public boolean getRegistered() {return registered; }  
 	public void setRegistered(boolean registered) { this.registered = registered; }
 	
