@@ -863,6 +863,7 @@ public class Endpoint extends HttpServlet {
 															
 														 NotificationItem ai = new NotificationItem(); 
 														 ai.setId(notification_id);
+														 ai.setActionMSFE(now);
 														 ai.setMSFE(now);
 														 ai.setUserId(target_useritem.getId());
 														 ai.setType("0");
@@ -945,7 +946,8 @@ public class Endpoint extends HttpServlet {
 																 ni.setHNRootId(current.getId());
 															 }
 															 ni.setId(notification_id);
-															 ni.setMSFE(now); // the time of the action is stored in the id, this value is when the NotificationItem was created.
+															 ni.setActionMSFE(current.getTime()*1000);
+															 ni.setMSFE(now);
 															 ni.setUserId(useritem.getId());
 															 ni.setHNTargetId(current.getId());
 															 ni.setTriggerer(target_useritem.getId());
@@ -1047,140 +1049,6 @@ public class Endpoint extends HttpServlet {
 											 //System.out.println("Endpoint.unfollowUser() end");
 										 }
 									 }
-									/* else if (method.equals("noteItemLikeOrDislike"))
-									 {
-										 //System.out.println("Endpoint.noteItemLikeOrDislike() begin");
-										 String item_id = request.getParameter("item_id");
-										 String like_or_dislike = request.getParameter("like_or_dislike");
-										 if(item_id == null || item_id.isEmpty())
-										 {
-											 jsonresponse.put("message", "Invalid item_id value.");
-											 jsonresponse.put("response_status", "error");
-										 }
-										 else if(like_or_dislike == null || like_or_dislike.isEmpty() || !(like_or_dislike.equals("like") || like_or_dislike.equals("dislike"))) // null, empty or not like or dislike
-										 {
-											 jsonresponse.put("message", "Invalid like_or_dislike value.");
-											 jsonresponse.put("response_status", "error");
-										 }
-										 else 
-										 {
-											 // not going to check validity of item_id here. If the user wants to say they've liked/disliked a bunch of invalid item ids, what do I care?
-											 if(like_or_dislike.equals("like"))
-											 {
-												 ItemLikeItem ili = new ItemLikeItem();
-												 ili.setUserId(useritem.getId());
-												 ili.setItemId(Long.parseLong(item_id));
-												 mapper.save(ili);
-											 }
-											 else
-											 {
-												 ItemDislikeItem ili = new ItemDislikeItem();
-												 ili.setUserId(useritem.getId());
-												 ili.setItemId(Long.parseLong(item_id));
-												 mapper.save(ili);
-											 }
-											 
-											 // look at the item being liked. Is the owner registered with Hackbook? If so, notify them.
-											 HNItemItem hii = mapper.load(HNItemItem.class, item_id, dynamo_config);
-											 if(hii != null)
-											 {	 
-												 JSONObject item_jo = new JSONObject(hii.getObject());
-												 UserItem target_useritem = getUserInDBCreatingIfNotAndFoundWithinHNAPI(item_jo.getString("by"));
-												 if(target_useritem != null)
-												 { 
-													 System.out.println(useritem.getId() + " has liked something by " + target_useritem.getId());
-													 // create "someone followed you" notification item and add to the user being followed, but only if that user is registered 
-													 // and has not already been notified (in the past 24h) that this user is following them in the past 
-													 if(target_useritem.getRegistered())
-													 {	
-														 System.out.println(target_useritem.getId() + " was found in the HN API and is registered with Hackbook.");
-														 long now = System.currentTimeMillis();
-														 String now_str = Global.fromDecimalToBase62(7,now);
-														 Random generator = new Random(); 
-														 int r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
-														 String randompart_str = Global.fromDecimalToBase62(3,r);
-														 String notification_id = "";
-														 if(like_or_dislike.equals("like") && item_jo.getString("type").equals("comment"))
-															 notification_id = now_str + randompart_str + "1";
-														 else if(like_or_dislike.equals("dislike") && item_jo.getString("type").equals("comment"))
-															 notification_id = now_str + randompart_str + "2";
-														 // handle 3 and 4 (story liked/disliked) here rather than FirebaseListener? 
-															
-														 NotificationItem ai = new NotificationItem(); 
-														 ai.setId(notification_id);
-														 ai.setMSFE(now);
-														 ai.setUserId(target_useritem.getId());
-														 ai.setType("0");
-														 //ai.setHNTargetId(null);
-														 ai.setTriggerer(useritem.getId());
-														 //ai.setHNRootId(hn_target_id);
-														 mapper.save(ai);
-														 System.out.println("notification item " + notification_id + " has been saved in the db.");
-														 
-														 HashSet<String> notificationset = (HashSet<String>)target_useritem.getNotificationIds();
-														 if(notificationset == null)
-															 notificationset = new HashSet<String>();
-														 notificationset.add(notification_id);
-														 while(notificationset.size() > Global.NOTIFICATIONS_SIZE_LIMIT)
-													    		notificationset.remove(notificationset.first());
-														 target_useritem.setNotificationIds(notificationset);
-														 target_useritem.setNotificationCount(target_useritem.getNotificationCount()+1);
-													 }
-													 else
-													 {
-														 System.out.println(target_useritem.getId() + " was found in the HN API but is NOT registered with Hackbook.");
-													 }
-												 }
-											 }
-											 else
-											 {
-												 System.out.println("The item liked was not found in Hackbook. This shouldn't happen (often) as all recent items will be seen by FirebaseListener.");
-											 }
-											 
-											 jsonresponse.put("response_status", "success");
-											 //System.out.println("Endpoint.noteItemLikeOrDislike() end");
-										 }
-									 }
-									 else if (method.equals("haveILikedThisItem"))
-									 {
-										 //System.out.println("Endpoint.haveILikedThisItem() begin");
-										 String item_id = request.getParameter("item_id");
-										 if(item_id == null || item_id.isEmpty() || !Global.isWholeNumeric(item_id))
-										 {
-											 jsonresponse.put("message", "Invalid item_id value.");
-											 jsonresponse.put("response_status", "error");
-										 }
-										 else
-										 {	 
-											 ItemLikeItem ili = mapper.load(ItemLikeItem.class, Long.parseLong(item_id), useritem.getId());
-											 jsonresponse.put("response_status", "success");
-											 if(ili == null)
-												 jsonresponse.put("response_value", false);
-											 else
-												 jsonresponse.put("response_value", true);
-										 }
-										 //System.out.println("Endpoint.haveILikedThisItem() end");
-									 }
-									 else if (method.equals("haveIDislikedThisItem"))
-									 {
-										 //System.out.println("Endpoint.haveIDislikedThisItem() begin");
-										 String item_id = request.getParameter("item_id");
-										 if(item_id == null || item_id.isEmpty() || !Global.isWholeNumeric(item_id))
-										 {
-											 jsonresponse.put("message", "Invalid item_id value.");
-											 jsonresponse.put("response_status", "error");
-										 }
-										 else
-										 {	 
-											 ItemDislikeItem ili = mapper.load(ItemDislikeItem.class, Long.parseLong(item_id), useritem.getId());
-											 jsonresponse.put("response_status", "success");
-											 if(ili == null)
-												 jsonresponse.put("response_value", false);
-											 else
-												 jsonresponse.put("response_value", true);
-										 }
-										 //System.out.println("Endpoint.haveIDislikedThisItem() end");
-									 } */
 								 }
 								 else // user had an screenname and this_access_token, but they were not valid. Let the frontend know to get rid of them
 								 {

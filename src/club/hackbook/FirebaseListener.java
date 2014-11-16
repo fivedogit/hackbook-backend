@@ -781,6 +781,7 @@ public class FirebaseListener implements ServletContextListener {
 		
 		NotificationItem ni = new NotificationItem();
 		ni.setId(notification_id);
+		ni.setActionMSFE(action_time);
 		ni.setMSFE(now);
 		ni.setUserId(useritem.getId());
 		ni.setType(type);

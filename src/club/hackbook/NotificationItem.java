@@ -31,6 +31,7 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	
 	private String id; 
 	private String user_id;
+	private long action_msfe;
 	private long msfe;
 	private String type;
 	private long hn_target_id;
@@ -45,6 +46,10 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	@DynamoDBIndexHashKey(attributeName="user_id", globalSecondaryIndexName="user_id-msfe-index") 
 	public String getUserId() {return user_id; }
 	public void setUserId(String user_id) { this.user_id = user_id; }
+	
+	@DynamoDBAttribute(attributeName="action_msfe") 
+	public long getActionMSFE() {return action_msfe; }
+	public void setActionMSFE(long action_msfe) { this.action_msfe = action_msfe; }
 	
 	@DynamoDBIndexRangeKey(attributeName="msfe", globalSecondaryIndexName="user_id-msfe-index")
 	public long getMSFE() {return msfe; }
@@ -78,6 +83,7 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 			jo = new JSONObject();
 			jo.put("id", getId());
 			jo.put("user_id", getUserId());
+			jo.put("action_msfe", getActionMSFE());
 			jo.put("msfe", getMSFE());
 			jo.put("type", getType());
 			jo.put("hn_target_id", getHNTargetId());
@@ -94,10 +100,10 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	@DynamoDBIgnore
 	public int compareTo(NotificationItem o) // this makes more recent comments come first
 	{
-	    long othermsfe = ((NotificationItem)o).getMSFE();
-	    if(othermsfe < getMSFE()) // this is to prevent equals
+	    long otheractionmsfe = ((NotificationItem)o).getActionMSFE();
+	    if(otheractionmsfe < getActionMSFE()) // this is to prevent equals
 	    	return 1;
-	    else if (othermsfe > getMSFE())
+	    else if (otheractionmsfe > getActionMSFE())
 	    	return -1;
 	    else
 	    	return 0;
