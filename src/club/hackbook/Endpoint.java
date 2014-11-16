@@ -712,9 +712,9 @@ public class Endpoint extends HttpServlet {
 											 else if(which.equals("notification_mode")) 
 											 {
 												 if(value.equals("notifications_only"))
-													 useritem.setURLCheckingMode("notifications_only");
+													 useritem.setNotificationMode("notifications_only");
 												 else if(value.equals("newsfeed_and_notifications"))
-													 useritem.setURLCheckingMode("newsfeed_and_notifications");
+													 useritem.setNotificationMode("newsfeed_and_notifications");
 												 mapper.save(useritem);
 												 jsonresponse.put("response_status", "success"); 
 											 }
