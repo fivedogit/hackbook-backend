@@ -778,6 +778,29 @@ public class Endpoint extends HttpServlet {
 											 NotificationItem ai = mapper.load(NotificationItem.class, notification_id, dynamo_config);
 											 if(ai == null)
 											 {
+												 // No notification with the specified ID exists. 
+												 // If that id is in the user's notification or newsfeed sets, remove it and update user.
+												 boolean saveuser = false;
+												 Set<String> notificationset = useritem.getNotificationIds();
+												 if(notificationset != null && notificationset.contains(notification_id))
+												 {
+													 notificationset.remove(notification_id);
+													 if(notificationset.isEmpty())
+														 notificationset = null;
+													 useritem.setNotificationIds(notificationset);
+													 saveuser = true;
+												 }
+												 Set<String> newsfeedset = useritem.getNewsfeedIds();
+												 if(newsfeedset != null && newsfeedset.contains(notification_id))
+												 {
+													 newsfeedset.remove(notification_id);
+													 if(newsfeedset.isEmpty())
+														 newsfeedset = null;
+													 useritem.setNewsfeedIds(newsfeedset);
+													 saveuser = true;
+												 }
+												 if(saveuser)
+													 mapper.save(useritem);
 												 jsonresponse.put("message", "No notification with that ID exists.");
 												 jsonresponse.put("response_status", "error"); 
 											 }
