@@ -302,7 +302,6 @@ public class Endpoint extends HttpServlet {
 				if(method.equals("searchForHNItem"))
 				{
 					String url_str = request.getParameter("url");
-					String mode = request.getParameter("mode"); // "stealth", "active", "notifications_only"
 					if(url_str != null && !url_str.isEmpty())
 					{
 						HashSet<HNItemItem> hnitems = getAllHNItemsFromURL(url_str, 0);
@@ -335,44 +334,9 @@ public class Endpoint extends HttpServlet {
 						}
 						else
 						{
-							boolean found_object = false;
-							// skip active mode for now
-							if(mode != null && mode.equals("active"))
-							{	
-								String result = Jsoup
-										.connect("https://hn.algolia.com/api/v1/search").data("query", url_str).data("tags","story")
-										.userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
-										.ignoreContentType(true).execute().body();
-								
-								JSONObject response_jo = new JSONObject(result);
-								JSONArray hits_ja = response_jo.getJSONArray("hits");
-								int objectID = 0;
-								for(int x = 0; x < hits_ja.length() && found_object == false; x++)
-				        		{	
-									System.out.println("*** " + hits_ja.getJSONObject(x));
-				        			if(hits_ja.getJSONObject(x).getString("url").equals(url_str))
-				        			{
-				        				jsonresponse.put("response_status", "success");
-				        				objectID = hits_ja.getJSONObject(x).getInt("objectID");
-										jsonresponse.put("objectID", objectID);
-										found_object = true;
-				        			}
-				        		}
-							}
-							
-							// nothing found for this URL, either natively or on Algolia
-							if(!found_object)
-							{	
-								jsonresponse.put("response_status", "success");
-								jsonresponse.put("objectID", "-1");
-							}
-						}
-					/*	else
-						{	
 							jsonresponse.put("response_status", "success");
 							jsonresponse.put("objectID", "-1");
-							// fire asychronous 
-						}*/
+						}
 					}
 					else
 					{
@@ -740,8 +704,6 @@ public class Endpoint extends HttpServlet {
 											 {
 												 if(value.equals("notifications_only"))
 													 useritem.setURLCheckingMode("notifications_only");
-												 else if(value.equals("active"))
-													 useritem.setURLCheckingMode("active");
 												 else // this is an error, default to 450
 													 useritem.setURLCheckingMode("stealth");
 												 mapper.save(useritem);
@@ -1051,14 +1013,13 @@ public class Endpoint extends HttpServlet {
 												 while(it.hasNext())
 												 {
 													 current = it.next();
-													 System.out.println("found newsfeed item triggered by:" + current.getTriggerer());
+													// System.out.println("found newsfeed item triggered by:" + current.getTriggerer());
 													 if(followingset.contains(current.getTriggerer()))
 													 {
-														 System.out.println("\tmatch with" + target_useritem.getId());
+														 //System.out.println("\tmatch with" + target_useritem.getId());
 														 remaining_ids.add(current.getId());
 													 }
-													 else
-														 System.out.println("\tno match with" + target_useritem.getId());
+													// else no match
 												 }
 												 if(remaining_ids.isEmpty())
 													 remaining_ids = null;

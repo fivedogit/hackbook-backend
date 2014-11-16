@@ -385,7 +385,6 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			HashSet<NotificationItem> returnset = new HashSet<NotificationItem>();
 			char c = 'X';
 			for (NotificationItem notificationitem : notificationitems) {
-				System.out.println("notification_item.getId()=" + notificationitem.getId());
 				c = notificationitem.getId().charAt(10);
 				if(c == '7' || c == '8' || c == '9')
 					returnset.add(notificationitem);
