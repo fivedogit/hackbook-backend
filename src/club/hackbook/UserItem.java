@@ -431,7 +431,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 		{	
 			HashSet<HNItemItem> returnset = new HashSet<HNItemItem>();
 			for (HNItemItem notificationitem : notificationitems) {
-					returnset.add(notificationitem);
+				returnset.add(notificationitem);
 			}
 			return returnset;
 		}
