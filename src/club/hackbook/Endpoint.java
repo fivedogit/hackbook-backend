@@ -963,7 +963,7 @@ public class Endpoint extends HttpServlet {
 														 { 
 															 r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
 															 now = System.currentTimeMillis();
-															 now_str = Global.fromDecimalToBase62(7,now);
+															 now_str = Global.fromDecimalToBase62(7,(current.getTime()*1000));
 															 randompart_str = Global.fromDecimalToBase62(3,r);
 															 ni = new NotificationItem();
 															 if(current.getType().equals("comment")) // if it's a comment, step back and find root
@@ -983,7 +983,7 @@ public class Endpoint extends HttpServlet {
 																 ni.setHNRootId(current.getId());
 															 }
 															 ni.setId(notification_id);
-															 ni.setMSFE(now);
+															 ni.setMSFE(now); // the time of the action is stored in the id, this value is when the NotificationItem was created.
 															 ni.setUserId(useritem.getId());
 															 ni.setHNTargetId(current.getId());
 															 ni.setTriggerer(target_useritem.getId());

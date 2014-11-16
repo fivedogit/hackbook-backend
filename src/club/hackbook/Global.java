@@ -111,16 +111,16 @@ public class Global {
 		 try{
 			 while(!foundroot && x < limit)
 			 {
-				 System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
+				// System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
 				 result = Jsoup
 						 .connect("https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json")
 						 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
 						 .ignoreContentType(true).execute().body();
 				 currentobject = new JSONObject(result);
-				 System.out.println(" which had type=" + currentobject.getString("type"));
+				 //System.out.println(" which had type=" + currentobject.getString("type"));
 				 if(!currentobject.getString("type").equals("comment"))
 				 {
-					 System.out.println("FOUND NON-COMMENT! type=" + currentobject.getString("type") + " setting hn_root_id=" +currentobject.getInt("id"));
+					 //System.out.println("FOUND NON-COMMENT! type=" + currentobject.getString("type") + " setting hn_root_id=" +currentobject.getInt("id"));
 					 foundroot = true;
 					 return currentobject.getInt("id");
 				 }
@@ -156,16 +156,13 @@ public class Global {
 		 try{
 			 while(!foundroot && x < limit)
 			 {
-				 System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
 				 result = Jsoup
 						 .connect("https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json")
 						 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
 						 .ignoreContentType(true).execute().body();
 				 currentobject = new JSONObject(result);
-				 System.out.println(" which had type=" + currentobject.getString("type"));
 				 if(!currentobject.getString("type").equals("comment"))
 				 {
-					 System.out.println("FOUND NON-COMMENT! type=" + currentobject.getString("type") + " setting hn_root_id=" +currentobject.getInt("id"));
 					 foundroot = true;
 					 return currentobject.getString("title");
 				 }

@@ -14,7 +14,7 @@ public class HNItemItem implements java.lang.Comparable<HNItemItem> {
 	
 	private long id; 
 	private String by;
-	private long time;
+	private long time; // stored in seconds, just like the HN API, not milliseconds
 	private String type;
 	private boolean dead;
 	private boolean deleted;
@@ -35,7 +35,7 @@ public class HNItemItem implements java.lang.Comparable<HNItemItem> {
 	@DynamoDBAttribute(attributeName="time") 
 	@DynamoDBIndexRangeKey(attributeName="time", globalSecondaryIndexNames={"by-time-index","url-time-index"}) 
 	public long getTime() {return time; }
-	public void setTime(long time) { this.time = time; }
+	public void setTime(long time) { this.time = time; } // stored in seconds, just like the HN API, not milliseconds
 	
 	@DynamoDBAttribute(attributeName="type") 
 	public String getType() {return type; }

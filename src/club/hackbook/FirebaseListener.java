@@ -192,84 +192,87 @@ public class FirebaseListener implements ServletContextListener {
 													  oldkids = (HashSet<Long>)hnii.getKids();
 												  
 												  HNItemItem new_hnii = createNewHNItemFromAPIResult(result, false);
-												  if(new_hnii != null && new_hnii.getKids() != null) // if newkids is null, there's obviously nothing to do
+												  if(new_hnii != null) // creation successful
 												  {
-													  newkids = (HashSet<Long>)new_hnii.getKids();
-														  
-													  Iterator<Long> it2 = oldkids.iterator();
-													  while(it2.hasNext())
+													  if(new_hnii.getKids() != null) // if newkids is null, there's obviously nothing to do
 													  {
-														  newkids.remove(it2.next());
-													  }
-														  
-													  Iterator<Long> newminusoldit = newkids.iterator();
-													  Long currentnewkid = 0L;
-													  while(newminusoldit.hasNext())
-													  {
-														  currentnewkid = newminusoldit.next();
-														  System.out.println("Found new kid: " + currentnewkid);
-														  HNItemItem hnitemitem = mapper.load(HNItemItem.class, currentnewkid, dynamo_config);
-														  if(hnitemitem == null)
+														  newkids = (HashSet<Long>)new_hnii.getKids();
+															  
+														  Iterator<Long> it2 = oldkids.iterator();
+														  while(it2.hasNext())
 														  {
-															  System.out.println("new kid " + currentnewkid + " is not in the db... adding");
-															  Response r2 = Jsoup
-																	  .connect("https://hacker-news.firebaseio.com/v0/item/" + currentnewkid  + ".json")
-																	  .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
-																	  .ignoreContentType(true).execute();
-															  String kid_result = r2.body();
-															  hnitemitem = createNewHNItemFromAPIResult(kid_result, true);
-															  if(hnitemitem != null)
-																  mapper.save(hnitemitem);
+															  newkids.remove(it2.next());
 														  }
-													  }
-												  }
-												  //mapper.delete(hnii); // replace old item 
-												  if(new_hnii.getKids() != null && new_hnii.getKids().size() == 0)
-													  new_hnii.setKids(null);
-												  mapper.save(new_hnii, new DynamoDBMapperConfig(SaveBehavior.CLOBBER));
-												  
-												  if(hnii.getType().equals("story") && hnii.getScore() != new_hnii.getScore())
-												  {
-													  long old_score = hnii.getScore();
-													  long new_score = new_hnii.getScore();
-													  if(old_score != new_score)
-													  {
-														  if(new_score > old_score)
-															  System.out.println("New score: +" + (new_score - old_score));
-														  else
-															  System.out.println("New score: -" + (old_score - new_score));
-														  
-														  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
-														  if(author == null)
+															  
+														  Iterator<Long> newminusoldit = newkids.iterator();
+														  Long currentnewkid = 0L;
+														  while(newminusoldit.hasNext())
 														  {
-															  System.out.print(" Author of this item is NOT in the database.");
-														  }
-														  else
-														  {
-															  System.out.print(" Author of this item IS in the database");
-															  if(author.getRegistered())
+															  currentnewkid = newminusoldit.next();
+															  System.out.println("Found new kid: " + currentnewkid);
+															  HNItemItem hnitemitem = mapper.load(HNItemItem.class, currentnewkid, dynamo_config);
+															  if(hnitemitem == null)
 															  {
-																  System.out.print(" and registered!");
-																  // add this score change to the parent's notification feed
-																  if(new_score > old_score)
-																  {
-																	  createNotificationItem(author, "3", hnii.getId(), null, 0);		 // feedable event 3, a story you wrote was upvoted
-																	  if(score_changes.containsKey(author.getId()))
-																		  score_changes.put(author.getId(), (new_score-old_score)+score_changes.get(author.getId()));
-																  }
-																  else
-																  {
-																	  createNotificationItem(author, "4", hnii.getId(), null, 0);	 // feedable event 4, a story you wrote was downvoted
-																	  if(score_changes.containsKey(author.getId()))
-																		  score_changes.put(author.getId(), (old_score-new_score)+score_changes.get(author.getId()));
-																  }
+																  System.out.println("new kid " + currentnewkid + " is not in the db... adding");
+																  Response r2 = Jsoup
+																		  .connect("https://hacker-news.firebaseio.com/v0/item/" + currentnewkid  + ".json")
+																		  .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
+																		  .ignoreContentType(true).execute();
+																  String kid_result = r2.body();
+																  hnitemitem = createNewHNItemFromAPIResult(kid_result, true);
+																  if(hnitemitem != null)
+																	  mapper.save(hnitemitem);
+															  }
+														  }
+													  }
+													  //mapper.delete(hnii); // replace old item 
+													  if(new_hnii.getKids() != null && new_hnii.getKids().size() == 0)
+														  new_hnii.setKids(null);
+													  mapper.save(new_hnii, new DynamoDBMapperConfig(SaveBehavior.CLOBBER));
+													  
+													  if(hnii.getType().equals("story") && hnii.getScore() != new_hnii.getScore())
+													  {
+														  long old_score = hnii.getScore();
+														  long new_score = new_hnii.getScore();
+														  if(old_score != new_score)
+														  {
+															  if(new_score > old_score)
+																  System.out.println("New score: +" + (new_score - old_score));
+															  else
+																  System.out.println("New score: -" + (old_score - new_score));
+															  
+															  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
+															  if(author == null)
+															  {
+																  System.out.print(" Author of this item is NOT in the database.");
 															  }
 															  else
 															  {
-																  System.out.print(" but NOT a registered user. Ignore.");
+																  System.out.print(" Author of this item IS in the database");
+																  if(author.getRegistered())
+																  {
+																	  System.out.print(" and registered!");
+																	  // add this score change to the parent's notification feed
+																	  if(new_score > old_score)
+																	  {
+																		  createNotificationItem(author, "3", hnii.getId(), hnii.getTime()*1000, null, 0);		 // feedable event 3, a story you wrote was upvoted
+																		  if(score_changes.containsKey(author.getId()))
+																			  score_changes.put(author.getId(), (new_score-old_score)+score_changes.get(author.getId()));
+																	  }
+																	  else
+																	  {
+																		  createNotificationItem(author, "4", hnii.getId(), hnii.getTime()*1000, null, 0);	 // feedable event 4, a story you wrote was downvoted
+																		  if(score_changes.containsKey(author.getId()))
+																			  score_changes.put(author.getId(), (old_score-new_score)+score_changes.get(author.getId()));
+																	  }
+																  }
+																  else
+																  {
+																	  System.out.print(" but NOT a registered user. Ignore.");
+																  }
 															  }
+															  System.out.println();
 														  }
-														  System.out.println();
 													  }
 												  }
 											  }
@@ -343,14 +346,14 @@ public class FirebaseListener implements ServletContextListener {
 														  System.out.println("New karma score: +" + (new_karma - old_karma));
 														  if(karma_changes.containsKey(useritem.getId()))
 															  karma_changes.put(useritem.getId(), (new_karma-old_karma)+karma_changes.get(useritem.getId()));
-														  createNotificationItem(useritem, "1", 0L, null, (new_karma-old_karma));
+														  createNotificationItem(useritem, "1", 0L, System.currentTimeMillis(), null, (new_karma-old_karma));
 													  }
 													  else
 													  {
 														  System.out.println("New karma score: -" + (old_karma - new_karma));
 														  if(karma_changes.containsKey(useritem.getId()))
 															  karma_changes.put(useritem.getId(), (new_karma-old_karma)+karma_changes.get(useritem.getId()));
-														  createNotificationItem(useritem, "2", 0L, null, (old_karma-new_karma));
+														  createNotificationItem(useritem, "2", 0L, System.currentTimeMillis(), null, (old_karma-new_karma));
 													  }
 												  }
 												  String old_about = "";
@@ -600,7 +603,7 @@ public class FirebaseListener implements ServletContextListener {
 					  //System.out.println("** NOT Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
 				  }
 				  
-				 
+				  doer.doIt(new_jo.getString("by"),new_jo.getLong("id"), mapper, dynamo_config);
 				  return hnii;
     		}
     		else
@@ -651,9 +654,9 @@ public class FirebaseListener implements ServletContextListener {
 					  {
 						  System.out.print("and registered!");
 						  if(hnii.getType().equals("comment"))
-							  createNotificationItem(parent_author, "5", hnii.getId(), hnii.getBy(), 0); // feedable event 5, a comment parent_author wrote was replied to
+							  createNotificationItem(parent_author, "5", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 5, a comment parent_author wrote was replied to
 						  else if(hnii.getType().equals("story"))
-							  createNotificationItem(parent_author, "6", hnii.getId(), hnii.getBy(), 0); // feedable event 6, a story parent_author wrote was replied to
+							  createNotificationItem(parent_author, "6", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 6, a story parent_author wrote was replied to
 					  }
 					  else
 					  {
@@ -697,7 +700,7 @@ public class FirebaseListener implements ServletContextListener {
 					  followeruseritem = mapper.load(UserItem.class, currentfollower, dynamo_config);
 					  if(followeruseritem != null && followeruseritem.getRegistered()) // if a user is following this commenter, they should be registered, but I guess this check is fine.						
 					  {  
-						  createNotificationItem(followeruseritem, "8", hnii.getId(), author.getId(), 0); // feedable event 8, a user you're following commented
+						  createNotificationItem(followeruseritem, "8", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 8, a user you're following commented
 					  }
 				  }
 				  System.out.print("]");
@@ -754,7 +757,7 @@ public class FirebaseListener implements ServletContextListener {
 					  followeruseritem = mapper.load(UserItem.class, currentfollower, dynamo_config);
 					  if(followeruseritem != null && followeruseritem.getRegistered()) // if a user is following this poster, they should be registered, but I guess this check is fine.		
 					  {  
-						  createNotificationItem(followeruseritem, "7", hnii.getId(), author.getId(), 0); // feedable event 7, a user you're following posted a story with a URL
+						  createNotificationItem(followeruseritem, "7", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 7, a user you're following posted a story with a URL
 						  System.out.print(followeruseritem.getId() + ", ");
 					  }
 				  }
@@ -765,12 +768,12 @@ public class FirebaseListener implements ServletContextListener {
 			
     }
     
-    private boolean createNotificationItem(UserItem useritem, String type, long hn_target_id, String triggerer, int karma_change)
+    private boolean createNotificationItem(UserItem useritem, String type, long hn_target_id, long action_time, String triggerer, int karma_change)
     {
     	if(!useritem.getRegistered()) // never create notification items for users that aren't registered.
     		return false;
     	long now = System.currentTimeMillis();
-    	String now_str = Global.fromDecimalToBase62(7,now);
+    	String now_str = Global.fromDecimalToBase62(7,action_time);
     	Random generator = new Random(); 
 		int r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
     	String randompart_str = Global.fromDecimalToBase62(3,r);
