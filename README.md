@@ -6,6 +6,8 @@ Hackbook lets you follow HN users and creates a news feed of their activity, lik
 
 ![Hackbook thread screenshot](https://s3.amazonaws.com/cyrus-general/thread.png)
 
+![Hackbook notifications screenshot](https://s3.amazonaws.com/cyrus-general/notifications.png)
+
 ![Hackbook inline follow screenshot](https://s3.amazonaws.com/cyrus-general/inline_follow.png)
 
 Hackbook is not affiliated with or endorsed by HN or YCombinator
