@@ -3,6 +3,7 @@ package club.hackbook;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,8 +34,11 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.BatchGetItemResult;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
@@ -924,105 +928,25 @@ public class Endpoint extends HttpServlet {
 													 followingset = new HashSet<String>();
 												 followingset.add(target_useritem.getId()); // add target_useritem to the useritem's following list
 												 useritem.setFollowing(followingset);
-												 
-												
-												 // look up any existing notifications owned by user and triggered by target_useritem over the past 7 days
-											/*	 HashSet<NotificationItem> existing_notifications = useritem.getNotificationItems(10080, mapper, dynamo_config);
-												 Iterator<NotificationItem> existing_it = existing_notifications.iterator();
-												 NotificationItem current_not = null;
-												 while(existing_it.hasNext())
-												 {
-													 current_not = existing_it.next();
-													 if(current_not.getTriggerer() != null && current_not.getTriggerer().equals(target_useritem.getId()))
-													 {
-														 if(current_not.getType().equals("7") || current_not.getType().equals("8")) // new story or new comment, respectively
-														 {
-															 
-														 }
-													 }
-												 }*/
+												 mapper.save(useritem);
+												 System.out.println(useritem.getId() + " has been saved with a new following list");
 												 
 												 HashSet<HNItemItem> hnitems = target_useritem.getHNItemsByd(2880, mapper, dynamo_config); // 2 days
-												 Set<String> newsfeed_ids = useritem.getNewsfeedIds();
-												 if(hnitems != null)
-												 { 
-													 System.out.println("Found " + hnitems.size() + " items by " + target_useritem.getId() + " in the past 2 days.");
-													 Iterator<HNItemItem> hnitem_it = hnitems.iterator();
-													 HNItemItem current = null;
-													 NotificationItem ni = null;
-													 long now = 0L;
-													 String now_str = "";
-													 Random generator = new Random(); 
-													 int r = 0;; // this will produce numbers that can be represented by 3 base62 digits
-													 String randompart_str = "";
-													 String notification_id = ""; 
-													 if(newsfeed_ids == null)
-														 newsfeed_ids = new HashSet<String>();
-													 while(hnitem_it.hasNext())
+												 if(hnitems != null && !hnitems.isEmpty())
+												 {	 
+													 NewFollowNewsfeedAdjuster nfnfa = new NewFollowNewsfeedAdjuster(useritem, target_useritem, hnitems, mapper, dynamo_config);
+													 if(hnitems.size() > 5) // people like jacquesm and tptacek can have 25+ items in 2 days
 													 {
-														 current = hnitem_it.next();
-														 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-														 sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
-														 Calendar cal = Calendar.getInstance();
-														 cal.add(Calendar.MINUTE, -2880);
-														 System.out.println("Found a " + current.getType() + " by " + current.getBy() + " at " + current.getTime() * 1000 + " hr=" + sdf.format(current.getTime() * 1000) + " cutoff=" + sdf.format(cal.getTimeInMillis()));
-														 if(current.getType().equals("comment") || current.getType().equals("story")) // If this is a comment or story, then it fits. ignore everything else
-														 { 
-															 r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
-															 now = System.currentTimeMillis();
-															 now_str = Global.fromDecimalToBase62(7,(current.getTime()*1000));
-															 randompart_str = Global.fromDecimalToBase62(3,r);
-															 ni = new NotificationItem();
-															 if(current.getType().equals("comment")) // if it's a comment, step back and find root
-															 {
-																 notification_id = now_str + randompart_str + "8";
-																 ni.setType("8");
-																 long root = Global.findRootItem(current.getId());
-																 if(root == -1)
-																	 break; // couldn't find root, so bail
-																 else
-																	 ni.setHNRootId(root);
-															 }
-															 else if(current.getType().equals("story")) // // if it's a story, root is the same as the item id
-															 {
-																 notification_id = now_str + randompart_str + "7";
-																 ni.setType("7");
-																 ni.setHNRootId(current.getId());
-															 }
-															 ni.setId(notification_id);
-															 ni.setActionMSFE(current.getTime()*1000);
-															 ni.setMSFE(now);
-															 ni.setUserId(useritem.getId());
-															 ni.setHNTargetId(current.getId());
-															 ni.setTriggerer(target_useritem.getId());
-															 mapper.save(ni);							
-															 newsfeed_ids.add(notification_id);
-														 }
+														 System.out.println("Doing it ASYNCHRONOUSLY");
+														 nfnfa.start(); // ASYNCHRONOUSLY put new feed items (triggered by target_useritem) into useritem's feed
+													 }
+													 else
+													 {
+														 System.out.println("Doing it SYNCHRONOUSLY");
+														 nfnfa.run(); // SYNCHRONOUSLY put new feed items into useritem's feed. When this returns and getUserSelf() fires, everything will be up-to-date wherever the user may click
 													 }
 												 }
-												 // if empty, set to null. If more than max, get most recent Global.NEWSFEED_SIZE_LIMIT items
-												 if(newsfeed_ids.isEmpty())
-													 newsfeed_ids = null;
-												 else if(newsfeed_ids.size() > Global.NEWSFEED_SIZE_LIMIT)
-												 {
-													 TreeSet<String> temp_ids = new TreeSet<String>();
-													 temp_ids.addAll(newsfeed_ids);
-													 newsfeed_ids = new TreeSet<String>(); // empty out the existing ids;
-													 Iterator<String> it = temp_ids.descendingIterator();
-													 int x = 0;
-													 String currentstr = "";
-													 while(x < Global.NEWSFEED_SIZE_LIMIT)
-													 {
-														 currentstr = it.next();
-														 newsfeed_ids.add(currentstr);
-														 x++;
-													 }
-													 if(useritem.getNewsfeedCount() > Global.NEWSFEED_SIZE_LIMIT) // count can't be more than the limit
-														 useritem.setNewsfeedCount(Global.NEWSFEED_SIZE_LIMIT); // so set it to the limit
-												 }
-												 useritem.setNewsfeedIds(newsfeed_ids);
-												 mapper.save(useritem);
-												 System.out.println(useritem.getId() + " has been saved with new following list");
+
 												 jsonresponse.put("response_status", "success");
 											 }
 											 else
@@ -1035,7 +959,7 @@ public class Endpoint extends HttpServlet {
 									 }
 									 else if (method.equals("unfollowUser"))
 									 {
-										 //System.out.println("Endpoint.unfollowUser() begin");
+										 System.out.println("Endpoint.unfollowUser() begin");
 										 String target_screenname = request.getParameter("target_screenname");
 										 UserItem target_useritem = mapper.load(UserItem.class, target_screenname, dynamo_config);
 										 if(target_useritem == null)
@@ -1055,6 +979,7 @@ public class Endpoint extends HttpServlet {
 										 }
 										 else
 										 {
+											 System.out.println("inc values ok");
 											 Set<String> followingset = useritem.getFollowing();
 											 if(followingset == null || !followingset.contains(target_screenname))
 											 {
@@ -1063,50 +988,60 @@ public class Endpoint extends HttpServlet {
 											 }
 											 else
 											 {
+												
+												 System.out.println("You are following that user, so it can be removed right now.");
 												 followingset.remove(target_useritem.getId());
 												 if(followingset.isEmpty())
 													 followingset = null;
 												 useritem.setFollowing(followingset);
-
-												 // remove all newsfeed items triggered by the user we're unfollowing
-												 Set<NotificationItem> newsfeedset = useritem.getNewsfeedItems(0, mapper, dynamo_config);
-												 Iterator<NotificationItem> it0 = newsfeedset.iterator();
-												 NotificationItem current = null;
-												 Set<String> remaining_ids = new HashSet<String>();
-												 while(it0.hasNext())
-												 {
-													 current = it0.next();
-													// System.out.println("found newsfeed item triggered by:" + current.getTriggerer());
-													 if(followingset.contains(current.getTriggerer()))
-													 {
-														 //System.out.println("\tmatch with" + target_useritem.getId());
-														 remaining_ids.add(current.getId());
-													 }
-													// else no match
-												 }
-												 // if what's left after removing the unfollowed user's stuff is empty, set to null. If over the limit (not sure how), then resize to limit
-												 if(remaining_ids.isEmpty())
-													 remaining_ids = null;
-												 else if(remaining_ids.size() > Global.NEWSFEED_SIZE_LIMIT) // if user is unfollowing someone, then I'm not sure it's possible for there to be more than the limit, but leave this here anyway
-												 {
-													 TreeSet<String> temp_ids = new TreeSet<String>();
-													 temp_ids.addAll(remaining_ids);
-													 remaining_ids = new TreeSet<String>(); // empty out the existing ids;
-													 Iterator<String> it1 = temp_ids.descendingIterator();
-													 int x = 0;
-													 String currentstr = "";
-													 while(x < Global.NEWSFEED_SIZE_LIMIT)
-													 {
-														 currentstr = it1.next();
-														 remaining_ids.add(currentstr);
-														 x++;
-													 }
-													 if(useritem.getNewsfeedCount() > Global.NEWSFEED_SIZE_LIMIT) // count can't be more than the limit
-														 useritem.setNewsfeedCount(Global.NEWSFEED_SIZE_LIMIT); // so set it to the limit
-												 }
-												 useritem.setNewsfeedIds(remaining_ids);
-												 mapper.save(useritem);
 												 
+												 Set<String> newsfeedset = useritem.getNewsfeedIds();
+												 TreeSet<String> new_newsfeedset = new TreeSet<String>();
+												 if(newsfeedset != null && !newsfeedset.isEmpty())
+												 {	 
+													 Iterator<String> newsfeed_it = newsfeedset.iterator();
+													 String table1Name = "hackbook_notifications2";
+													 HashMap<String, KeysAndAttributes> requestItems = new HashMap<String, KeysAndAttributes>();
+													 ArrayList<Map<String, AttributeValue>> keys1 = new ArrayList<Map<String, AttributeValue>>();
+													 HashMap<String, AttributeValue> table1key1 = null;
+													 while(newsfeed_it.hasNext())
+													 {	 
+														 table1key1 = new HashMap<String, AttributeValue>();
+														 table1key1.put("id", new AttributeValue().withS(newsfeed_it.next()));
+														 keys1.add(table1key1);
+													 }
+													 requestItems.put(table1Name, new KeysAndAttributes().withKeys(keys1));    	
+													 BatchGetItemRequest batchGetItemRequest = new BatchGetItemRequest().withRequestItems(requestItems);
+													 BatchGetItemResult result = client.batchGetItem(batchGetItemRequest);
+
+													 List<Map<String,AttributeValue>> table1Results = result.getResponses().get(table1Name);
+													 System.out.println("Items in table " + table1Name);
+													 //NotificationItem ni = null;
+													 for (Map<String,AttributeValue> item : table1Results) {
+														 if(!item.get("triggerer").getS().equals(target_screenname)) // only keep the ones that weren't triggered by the user that just got unfollowed
+														 {	 
+															 // don't have to actually create the NotificationItem here, but leave this for cut paste later.
+															 /* ni = new NotificationItem();
+															 ni.setId(item.get("id").getS());
+															 ni.setUserId(item.get("user_id").getS());
+															 ni.setType(item.get("type").getS());
+															 ni.setTriggerer(item.get("triggerer").getS());
+															 ni.setActionMSFE(Long.parseLong(item.get("action_msfe").getN()));
+															 ni.setMSFE(Long.parseLong(item.get("msfe").getN()));
+															 ni.setHNTargetId(Long.parseLong(item.get("hn_target_id").getN()));
+															 ni.setHNRootId(Long.parseLong(item.get("hn_root_id").getN()));
+															 ni.setKarmaChange(Integer.parseInt(item.get("karma_change").getN()));*/
+															 new_newsfeedset.add(item.get("id").getS());
+														 }
+													 }
+													 if(new_newsfeedset.isEmpty())
+														 new_newsfeedset = null;
+													 useritem.setNewsfeedIds(new_newsfeedset);
+												 }
+												 mapper.save(useritem);
+												 // 1. we don't have to check NotificationIds because this is an unfollow which only affects newsfeed items.
+												 // 2. We don't need to check newsfeed size limit because we're unfollowing. At worst, the size stays the same.
+												
 												 // remove useritem from target_useritem's followers set
 												 Set<String> followersset = target_useritem.getFollowers();
 												 if(followersset != null)
@@ -1122,6 +1057,7 @@ public class Endpoint extends HttpServlet {
 												 jsonresponse.put("response_status", "success");
 											 }
 										 }
+										 System.out.println("Endpoint.unfollowUser() end");
 									 }
 								 }
 								 else // user had an screenname and this_access_token, but they were not valid. Let the frontend know to get rid of them

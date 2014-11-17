@@ -7,6 +7,8 @@ import java.util.Calendar;
 
 import org.jsoup.Jsoup;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
@@ -99,6 +101,36 @@ public class Global {
 	        }
 	        return tempVal;
 	    }	
+	 
+	 public static long findRootItemLocal(long hn_target_id, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config)
+	 {
+		 boolean foundroot = false;
+		 int x = 0;
+		 int limit = 15; // limit the number of possible loops to 15, just in case
+		 while(!foundroot && x < limit)
+		 {
+			// System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
+			HNItemItem hnii = mapper.load(HNItemItem.class, hn_target_id, dynamo_config);
+			if(hnii == null)
+			{
+				return -1;
+			}
+			else if(hnii.getType().equals("story"))
+			{
+				return hnii.getId();
+			}
+			else if(hnii.getType().equals("comment") && hnii.getParent() != 0L)
+			{
+				hn_target_id = hnii.getParent();
+			}
+			else
+			{
+				return -1;
+			}
+			x++;
+		 }
+		 return -1; 
+	 }
 	 
 	 public static long findRootItem(long hn_target_id)
 	 {
