@@ -26,7 +26,7 @@ import com.amazonaws.util.json.JSONObject;
 
 
 
-@DynamoDBTable(tableName="hackbook_notifications")
+@DynamoDBTable(tableName="hackbook_notifications2")
 public class NotificationItem implements java.lang.Comparable<NotificationItem> {
 	
 	private String id; 
@@ -43,15 +43,15 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	public String getId() {return id; }
 	public void setId(String id) { this.id = id; }
 	
-	@DynamoDBIndexHashKey(attributeName="user_id", globalSecondaryIndexName="user_id-msfe-index") 
+	@DynamoDBIndexHashKey(attributeName="user_id", globalSecondaryIndexName="user_id-action_msfe-index") 
 	public String getUserId() {return user_id; }
 	public void setUserId(String user_id) { this.user_id = user_id; }
 	
-	@DynamoDBAttribute(attributeName="action_msfe") 
+	@DynamoDBIndexRangeKey(attributeName="action_msfe", globalSecondaryIndexName="user_id-action_msfe-index")
 	public long getActionMSFE() {return action_msfe; }
 	public void setActionMSFE(long action_msfe) { this.action_msfe = action_msfe; }
 	
-	@DynamoDBIndexRangeKey(attributeName="msfe", globalSecondaryIndexName="user_id-msfe-index")
+	@DynamoDBAttribute(attributeName="msfe")
 	public long getMSFE() {return msfe; }
 	public void setMSFE(long msfe) { this.msfe = msfe; }
 	

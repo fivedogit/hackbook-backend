@@ -925,7 +925,23 @@ public class Endpoint extends HttpServlet {
 												 followingset.add(target_useritem.getId()); // add target_useritem to the useritem's following list
 												 useritem.setFollowing(followingset);
 												 
-												 // look up what this target_user has done over the past 2 days...
+												
+												 // look up any existing notifications owned by user and triggered by target_useritem over the past 7 days
+											/*	 HashSet<NotificationItem> existing_notifications = useritem.getNotificationItems(10080, mapper, dynamo_config);
+												 Iterator<NotificationItem> existing_it = existing_notifications.iterator();
+												 NotificationItem current_not = null;
+												 while(existing_it.hasNext())
+												 {
+													 current_not = existing_it.next();
+													 if(current_not.getTriggerer() != null && current_not.getTriggerer().equals(target_useritem.getId()))
+													 {
+														 if(current_not.getType().equals("7") || current_not.getType().equals("8")) // new story or new comment, respectively
+														 {
+															 
+														 }
+													 }
+												 }*/
+												 
 												 HashSet<HNItemItem> hnitems = target_useritem.getHNItemsByd(2880, mapper, dynamo_config); // 2 days
 												 Set<String> newsfeed_ids = useritem.getNewsfeedIds();
 												 if(hnitems != null)
@@ -940,7 +956,6 @@ public class Endpoint extends HttpServlet {
 													 int r = 0;; // this will produce numbers that can be represented by 3 base62 digits
 													 String randompart_str = "";
 													 String notification_id = ""; 
-													
 													 if(newsfeed_ids == null)
 														 newsfeed_ids = new HashSet<String>();
 													 while(hnitem_it.hasNext())

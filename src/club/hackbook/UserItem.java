@@ -306,7 +306,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public HashSet<NotificationItem> getNotificationItems(int minutes_ago, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config) { 
 		// set up an expression to query screename#id
 		DynamoDBQueryExpression<NotificationItem> queryExpression = new DynamoDBQueryExpression<NotificationItem>()
-				.withIndexName("user_id-msfe-index")
+				.withIndexName("user_id-action_msfe-index")
 				.withScanIndexForward(true)
 				.withConsistentRead(false);
 	        
@@ -324,7 +324,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			long msfe_cutoff = cal.getTimeInMillis();
 			// set the msfe range part
 			Map<String, Condition> keyConditions = new HashMap<String, Condition>();
-			keyConditions.put("msfe",new Condition()
+			keyConditions.put("action_msfe",new Condition()
 			.withComparisonOperator(ComparisonOperator.GT)
 			.withAttributeValueList(new AttributeValue().withN(new Long(msfe_cutoff).toString())));
 			queryExpression.setRangeKeyConditions(keyConditions);
@@ -338,7 +338,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			char c = 'X';
 			for (NotificationItem notificationitem : notificationitems) {
 				c = notificationitem.getId().charAt(10);
-				if(!(c == '7' || c == '8' || c == '9')) // all but 'a user you're following did X'
+				if(!(c == '7' || c == '8')) // all but 'a user you're following did X'
 					returnset.add(notificationitem);
 			}
 			return returnset;
@@ -354,7 +354,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public HashSet<NotificationItem> getNewsfeedItems(int minutes_ago, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config) { 
 		// set up an expression to query screename#id
 		DynamoDBQueryExpression<NotificationItem> queryExpression = new DynamoDBQueryExpression<NotificationItem>()
-				.withIndexName("user_id-msfe-index")
+				.withIndexName("user_id-action_msfe-index")
 				.withScanIndexForward(true)
 				.withConsistentRead(false);
 	        
@@ -372,7 +372,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			long msfe_cutoff = cal.getTimeInMillis();
 			// set the msfe range part
 			Map<String, Condition> keyConditions = new HashMap<String, Condition>();
-			keyConditions.put("msfe",new Condition()
+			keyConditions.put("action_msfe",new Condition()
 			.withComparisonOperator(ComparisonOperator.GT)
 			.withAttributeValueList(new AttributeValue().withN(new Long(msfe_cutoff).toString())));
 			queryExpression.setRangeKeyConditions(keyConditions);
@@ -386,7 +386,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			char c = 'X';
 			for (NotificationItem notificationitem : notificationitems) {
 				c = notificationitem.getId().charAt(10);
-				if(c == '7' || c == '8' || c == '9')
+				if(c == '7' || c == '8')
 					returnset.add(notificationitem);
 			}
 			return returnset;
@@ -447,7 +447,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public HashMap<String,HashSet<NotificationItem>> getNotificationAndNewsfeedItems(int minutes_ago, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config) { 
 		// set up an expression to query screename#id
 		DynamoDBQueryExpression<NotificationItem> queryExpression = new DynamoDBQueryExpression<NotificationItem>()
-				.withIndexName("user_id-msfe-index")
+				.withIndexName("user_id-action_msfe-index")
 				.withScanIndexForward(true)
 				.withConsistentRead(false);
 	        
@@ -465,7 +465,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			long msfe_cutoff = cal.getTimeInMillis();
 			// set the msfe range part
 			Map<String, Condition> keyConditions = new HashMap<String, Condition>();
-			keyConditions.put("msfe",new Condition()
+			keyConditions.put("action_msfe",new Condition()
 			.withComparisonOperator(ComparisonOperator.GT)
 			.withAttributeValueList(new AttributeValue().withN(new Long(msfe_cutoff).toString())));
 			queryExpression.setRangeKeyConditions(keyConditions);
@@ -480,7 +480,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			char c = 'X';
 			for (NotificationItem notificationitem : notificationitems) {
 				c = notificationitem.getId().charAt(10);
-				if(c == '7' || c == '8' || c == '9')
+				if(c == '7' || c == '8')
 					newsfeedset.add(notificationitem);
 				else
 					notificationset.add(notificationitem);

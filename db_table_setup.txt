@@ -1,9 +1,9 @@
 hackbook_users2
 	id (str)
-	registered-since (number,number)
-hackbook_notifications
+	registered-seen (number,number)
+hackbook_notifications2
 	id (str)
-	user_id-msfe (string,number)
+	user_id-action_msfe (string,number)
 hackbook_hnitems
 	id (number)
 	url-time (string,number)
