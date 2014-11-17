@@ -52,7 +52,7 @@ public class FirebaseListener implements ServletContextListener {
     private String myId = ""; 
     GlobalvarItem firebase_owner_id_gvi = null;
     GlobalvarItem firebase_last_msfe_gvi = null;
-    Doer doer = null;
+    GrowthHacker doer = null;
     
     @SuppressWarnings("unchecked")
     @Override
@@ -64,7 +64,7 @@ public class FirebaseListener implements ServletContextListener {
     		client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
     		mapper = new DynamoDBMapper(client);
     		dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
-    		doer = new Doer();
+    		doer = new GrowthHacker();
     	} catch (IOException e) {
     		e.printStackTrace();
     	}
@@ -209,11 +209,11 @@ public class FirebaseListener implements ServletContextListener {
 														  while(newminusoldit.hasNext())
 														  {
 															  currentnewkid = newminusoldit.next();
-															  System.out.println("Found new kid: " + currentnewkid);
+															  System.out.print("kid: " + currentnewkid + " ");
 															  HNItemItem hnitemitem = mapper.load(HNItemItem.class, currentnewkid, dynamo_config);
 															  if(hnitemitem == null)
 															  {
-																  System.out.println("new kid " + currentnewkid + " is not in the db... adding");
+																  System.out.print("adding! ");
 																  Response r2 = Jsoup
 																		  .connect("https://hacker-news.firebaseio.com/v0/item/" + currentnewkid  + ".json")
 																		  .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
@@ -312,12 +312,12 @@ public class FirebaseListener implements ServletContextListener {
 		 							 useritem = mapper.load(UserItem.class, screenname, dynamo_config);
 		 							 if(useritem == null)
 		 							 {
-										  System.out.println("screenname: " + screenname + " does not exist. Creating.");
+										  System.out.print(screenname + " Creating. ");
 										  createNewUser(result);
 		 							 }
 		 							 else
 		 							 {
-										  System.out.println("screenname: " + screenname + " already exists. Updating.");
+										  System.out.print(screenname + " Updating. ");
 										  String old_profile_str = useritem.getHNProfile();
 										  if(old_profile_str == null) // the user existed in the database, but had no profile, for some reason. Set it and then skip the rest.
 										  {
