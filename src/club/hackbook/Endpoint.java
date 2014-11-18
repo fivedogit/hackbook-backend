@@ -401,7 +401,16 @@ public class Endpoint extends HttpServlet {
 							String hn_karma_str = "0";
 							String hn_since_str = "0";
 							JSONObject hn_user_jo = null;
-							while(x < limit)
+							
+							// wait 10 seconds to do first try. This helps prevent read or socket timeout errors on tries 0, 1 and 2 which are unlikely to work anyway.
+							try {
+								java.lang.Thread.sleep(11000);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							x=2;
+							while(x < limit) // 2 (11 sec), 3 (16 sec), 4 (21 sec), 5 (26 sec), 6 (31 sec)
 							{
 								try
 								{
