@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -140,7 +138,7 @@ public class FirebaseListener implements ServletContextListener {
 					 try{
 						  
 						 HashMap<String, Long> score_changes = new HashMap<String,Long>(); 
-						 HashMap<String, Integer> karma_changes = new HashMap<String,Integer>(); 
+						 //HashMap<String, Integer> karma_changes = new HashMap<String,Integer>(); 
 						  
 						 for (DataSnapshot child : snapshot.getChildren())
 						 {
@@ -312,59 +310,98 @@ public class FirebaseListener implements ServletContextListener {
 		 							 useritem = mapper.load(UserItem.class, screenname, dynamo_config);
 		 							 if(useritem == null)
 		 							 {
-										  System.out.print(screenname + " Creating. ");
-										  createNewUser(result);
+		 								 System.out.println("Creating " + screenname + ". ");
+		 								 createNewUser(result);
 		 							 }
 		 							 else
 		 							 {
-										  System.out.print(screenname + " Updating. ");
-										  String old_profile_str = useritem.getHNProfile();
-										  if(old_profile_str == null) // the user existed in the database, but had no profile, for some reason. Set it and then skip the rest.
+										  System.out.println("Updating " + screenname + ". ");
+										  if(useritem.getRegistered() && !(result == null || result.isEmpty())) // 
 										  {
-											  System.err.println("User existed in the database, but had no hn_profile for some reason. Setting it and moving on. If this continues, fix.");
-											  useritem.setHNProfile(result);
-											  mapper.save(useritem);
-										  }
-										  else
-										  {	  
 											  try{
-												  old_jo = new JSONObject(useritem.getHNProfile());
 												  new_jo = new JSONObject(result);
-												//  System.out.println("----------------------------------------------");
-												 // System.out.println("old=" + old_jo);
-												 // System.out.println("new=" + new_jo);
-												  
-												  useritem.setHNProfile(result);
-												  mapper.save(useritem);
-												  int old_karma = old_jo.getInt("karma");
-												  int new_karma = new_jo.getInt("karma");
-												  if(old_karma != new_karma)
-												  {
-													  // feedable items 1-2?
-													  if(new_karma > old_karma)
+												  boolean saveuseritem = false;
+												  if(useritem.getRegistered())
+												  {  
+													  int new_karma = new_jo.getInt("karma");
+													  int old_karma = useritem.getHNKarma();
+													  if(old_karma != new_karma)
 													  {
-														  System.out.println("New karma score: +" + (new_karma - old_karma));
-														  if(karma_changes.containsKey(useritem.getId()))
-															  karma_changes.put(useritem.getId(), (new_karma-old_karma)+karma_changes.get(useritem.getId()));
-														  createNotificationItem(useritem, "1", 0L, System.currentTimeMillis(), null, (new_karma-old_karma));
+														  int ttl = useritem.getKarmaPoolTTLMins();
+														  if(ttl > 1440 || ttl < 1) // one day to one minute is the acceptable range. If not, reset it to 10 mins.
+														  {
+															  ttl = 10;
+															  useritem.setKarmaPoolTTLMins(10);
+														  }
+														  
+														  if(useritem.getLastKarmaPoolDrain() < now - (ttl*60000)) // it's been more than ttl minutes
+														  {
+															  int change = useritem.getKarmaPool() + (new_karma - old_karma);
+															  if(change != 0) // this change in karma for this firebase increment (30 sec) + the total change in the karma pool (10 mins) cancel each other out.
+															  {
+																  System.out.println("Emptying karma pool and reporting a 10 min change of " + change);
+																  if(change > 0)
+																	  createNotificationItem(useritem, "1", 0L, System.currentTimeMillis(), null, change);
+																  else if(change < 0)
+																	  createNotificationItem(useritem, "2", 0L, System.currentTimeMillis(), null, change);
+															  }
+															  // regardless, empty the pool and set new timestamp
+															  useritem.setKarmaPool(0);
+															  useritem.setLastKarmaPoolDrain(now);
+														  }
+														  else
+														  {
+															  useritem.setKarmaPool(useritem.getKarmaPool() + (new_karma - old_karma));
+														  }
+														  saveuseritem = true;
 													  }
-													  else
+													  else // the user's karma as reported by HN API right now is exactly the same as what we've got on file. Do nothing.
 													  {
-														  System.out.println("New karma score: -" + (old_karma - new_karma));
-														  if(karma_changes.containsKey(useritem.getId()))
-															  karma_changes.put(useritem.getId(), (new_karma-old_karma)+karma_changes.get(useritem.getId()));
-														  createNotificationItem(useritem, "2", 0L, System.currentTimeMillis(), null, (old_karma-new_karma));
+														  
 													  }
 												  }
-												  String old_about = "";
+												  
+												  // keep track of "about" changes? I guess. Why not.
+												  String old_about = useritem.getHNAbout();
 												  String new_about = "";
-												  if(old_jo.has("about"))
-													  old_about = old_jo.getString("about");
 												  if(new_jo.has("about"))
 													  new_about = new_jo.getString("about");
-												  if(!old_about.equals(new_about))
-													  System.out.println("New about message: " + new_about);
-
+												  if(old_about == null || new_about == null) // one or both was null
+												  {
+													  if(old_about == null && new_about == null)
+													  { 
+														  // both null, no change, do nothing
+													  }
+													  else if(old_about == null && new_about != null)
+													  {
+														  System.out.println("ABOUT: old_about was null. new_about is not. Saving.");
+														  useritem.setHNAbout(new_about);
+														  saveuseritem = true; 
+													  }
+													  else if(old_about != null && new_about == null)
+													  {
+														  System.out.println("ABOUT: old_about was not null. new_about is. Saving.");
+														  useritem.setHNAbout(null);
+														  saveuseritem = true; 
+													  }
+												  }
+												  else
+												  {
+													  if(!old_about.equals(new_about))
+													  {
+														  System.out.println("ABOUT: about string changed. Saving.");
+														  useritem.setHNAbout(new_about);
+														  saveuseritem = true; 
+													  }
+													  // else neither null, both equal, no change. do nothing.
+												  }
+												
+												  
+												  if(saveuseritem)
+													  mapper.save(useritem);
+												  
+												  /*
+												  // no reason to keep track of this user's submitted items because any new items will appear in the ITEMS block above.
 												  JSONArray old_submitted_ja = new JSONArray();
 												  if(old_jo.has("submitted"))
 													  old_submitted_ja = old_jo.getJSONArray("submitted");
@@ -391,14 +428,15 @@ public class FirebaseListener implements ServletContextListener {
 												  while(newminusoldit.hasNext())
 												  {
 													  System.out.println("Found new submitted: " + newminusoldit.next());
-												  }
+												  }								  
+												   */
+												  
 											  }
 											  catch(JSONException jsone)
 											  {
 												  jsone.printStackTrace();
 											  }
 										  }
-										 // System.out.println("----------------------------------------------");
 									  }
 		 						  }
 		 					  }
@@ -407,57 +445,6 @@ public class FirebaseListener implements ServletContextListener {
 		 						  System.err.println("child.getName() was something other than \"items\" or \"profiles\"");
 		 					  }
 		 				  }
-						  
-						 /* System.out.println("******** Story score changes after parsing items: ***********");
-						  for (Map.Entry<String, Integer> entry : user_scorechanges_after_items.entrySet()) 
-						  { 
-							  System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue()); 
-						  }
-						  
-						  System.out.println("******** Karma changes after parsing profiles: ***********");
-						  for (Map.Entry<String, Integer> entry : user_karmachanges_after_profiles.entrySet()) 
-						  { 
-							  System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue()); 
-						  }
-						  
-						  //System.out.println("******** Calculating master changes: ***********");
-						  HashMap<String, Integer> masterkarmachanges = new HashMap<String,Integer>();
-						  String currentkarmakey = "";
-						  int currentkarmavalue = 0;
-						  String currentstoryscorekey = "";
-						  int currentstoryscorevalue = 0;
-						  boolean found = false;
-						  for (Map.Entry<String, Integer> entry : user_karmachanges_after_profiles.entrySet()) 
-						  { 
-							  //System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-							  currentkarmakey = entry.getKey();
-							  currentkarmavalue = entry.getValue();
-							  found = false;
-							  for (Map.Entry<String, Integer> entry2 : user_scorechanges_after_items.entrySet()) 
-							  { 
-								 // System.out.println("\tKey = " + entry2.getKey() + ", Value = " + entry2.getValue()); 
-								  currentstoryscorekey = entry2.getKey();
-								  currentstoryscorevalue = entry2.getValue();
-								  if(currentkarmakey.equals(currentstoryscorekey))
-								  {
-									  if(currentkarmavalue != currentstoryscorevalue) // there is a discrepancy between karma change and story score changes. This means score changed elsewhere (comments).
-										  masterkarmachanges.put(currentkarmakey, currentkarmavalue - currentstoryscorevalue);
-									  found = true; // the two values are equal, so no additional karma change outside of the storychanges.
-								  }
-							  }
-							  if(found == false)
-							  {
-								  masterkarmachanges.put(currentkarmakey, currentkarmavalue);
-							  }
-						  }
-						  
-						  System.out.println("******** Master karma changes (excluding stories): ***********");
-						  // feedable events 1 & 2
-						  for (Map.Entry<String, Integer> entry : masterkarmachanges.entrySet()) 
-						  { 
-							  System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue()); 
-						  }*/
-						  
 					  } catch (IOException e) {
 						  // TODO Auto-generated catch block
 						  e.printStackTrace();
@@ -843,7 +830,6 @@ public class FirebaseListener implements ServletContextListener {
     {
     	try { 
     		UserItem useritem = new UserItem();
-    		useritem.setHNProfile(result);
     		JSONObject profile_jo = new JSONObject(result);
     		useritem.setHNKarma(profile_jo.getInt("karma"));
     		useritem.setLastKarmaCheck(System.currentTimeMillis());

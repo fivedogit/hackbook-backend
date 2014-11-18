@@ -613,7 +613,7 @@ public class Endpoint extends HttpServlet {
 											useritem.setSeenHumanReadable(sdf.format(timestamp_at_entry));
 											useritem.setLastIPAddress(request.getRemoteAddr()); // necessary for spam and contest fraud prevention
 										}
-										if(now - useritem.getLastKarmaCheck() > 3600000) // if it's been an hour since last karma check, check it again
+										if(now - useritem.getLastKarmaCheck() > 1200000) // if it's been 20 mins since last karma check, check it again
 										{
 											something_needs_updating = true;
 											try{
@@ -1141,11 +1141,9 @@ public class Endpoint extends HttpServlet {
 					return null;
 				} else {
 					target_useritem = new UserItem();
-					target_useritem.setHNProfile(result);
 					JSONObject profile_jo = new JSONObject(result);
 					target_useritem.setHNKarma(profile_jo.getInt("karma"));
-					target_useritem.setLastKarmaCheck(System
-							.currentTimeMillis());
+					target_useritem.setLastKarmaCheck(System.currentTimeMillis());
 					target_useritem.setHNSince(profile_jo.getLong("created"));
 					target_useritem.setId(profile_jo.getString("id"));
 					target_useritem.setRegistered(false);

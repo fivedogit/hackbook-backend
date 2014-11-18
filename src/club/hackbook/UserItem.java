@@ -45,9 +45,11 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private long this_access_token_expires;
 	private String permission_level; 
 	private String last_ip_address;
-	private String hn_profile;
-	private int hn_karma;
-	private long last_karma_check;
+	private int hn_karma;		   // this is set on login and every 20 minutes by getUserSelf
+	private long last_karma_check; // 
+	private int karma_pool;				// rather than produce a NotificationItem every 30 seconds, let's wait some period of time
+	private long last_karma_pool_drain; // pool the karma changes together, then unload it all at once.
+	private int karma_pool_ttl_mins;
 	private long hn_since;
 	private String hn_about;
 	private String url_checking_mode;
@@ -151,10 +153,6 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public String getNotificationMode() {return notification_mode; }  
 	public void setNotificationMode(String notification_mode) { this.notification_mode = notification_mode; }
 	
-	@DynamoDBAttribute(attributeName="hn_profile")  
-	public String getHNProfile() {return hn_profile; }  
-	public void setHNProfile(String hn_profile) { this.hn_profile = hn_profile; }
-	
 	@DynamoDBAttribute(attributeName="hn_about")  
 	public String getHNAbout() {return hn_about; }  
 	public void setHNAbout(String hn_about) { this.hn_about = hn_about; }
@@ -211,6 +209,18 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	@DynamoDBAttribute(attributeName="hide_hn_notifications")
 	public boolean getHideHNNotifications() {return hide_hn_notifications; }  
 	public void setHideHNNotifications(boolean hide_hn_notifications) { this.hide_hn_notifications = hide_hn_notifications; }
+	
+	@DynamoDBAttribute(attributeName="karma_pool")  
+	public int getKarmaPool() { return karma_pool; }
+	public void setKarmaPool(int karma_pool) { this.karma_pool = karma_pool; }
+	
+	@DynamoDBAttribute(attributeName="last_karma_pool_drain")  
+	public long getLastKarmaPoolDrain() {return last_karma_pool_drain; }
+	public void setLastKarmaPoolDrain(long last_karma_pool_drain) { this.last_karma_pool_drain = last_karma_pool_drain; }
+	
+	@DynamoDBAttribute(attributeName="karma_pool_ttl_mins")  
+	public int getKarmaPoolTTLMins() { return karma_pool_ttl_mins; }
+	public void setKarmaPoolTTLMins(int karma_pool_ttl_mins) { this.karma_pool_ttl_mins = karma_pool_ttl_mins; }
 	
 	@DynamoDBIgnore
 	public boolean isValid(String inc_this_access_token)
