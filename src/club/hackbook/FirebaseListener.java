@@ -316,50 +316,50 @@ public class FirebaseListener implements ServletContextListener {
 		 							 else
 		 							 {
 										  System.out.println("Updating " + screenname + ". ");
-										  if(useritem.getRegistered() && !(result == null || result.isEmpty())) // 
+										  if(!(result == null || result.isEmpty())) // 
 										  {
 											  try{
 												  new_jo = new JSONObject(result);
 												  boolean saveuseritem = false;
-												  if(useritem.getRegistered())
-												  {  
-													  int new_karma = new_jo.getInt("karma");
-													  int old_karma = useritem.getHNKarma();
-													  if(old_karma != new_karma)
+												 
+												  int new_karma = new_jo.getInt("karma");
+												  int old_karma = useritem.getHNKarma();
+												  if(old_karma != new_karma)
+												  {
+													  int ttl = useritem.getKarmaPoolTTLMins();
+													  if(ttl > 1440 || ttl < 1) // one day to one minute is the acceptable range. If not, reset it to 10 mins.
 													  {
-														  int ttl = useritem.getKarmaPoolTTLMins();
-														  if(ttl > 1440 || ttl < 1) // one day to one minute is the acceptable range. If not, reset it to 10 mins.
-														  {
-															  ttl = 10;
-															  useritem.setKarmaPoolTTLMins(10);
-														  }
-														  
-														  if(useritem.getLastKarmaPoolDrain() < now - (ttl*60000)) // it's been more than ttl minutes
-														  {
-															  int change = useritem.getKarmaPool() + (new_karma - old_karma);
-															  if(change != 0) // this change in karma for this firebase increment (30 sec) + the total change in the karma pool (10 mins) cancel each other out.
-															  {
-																  System.out.println("Emptying karma pool and reporting a 10 min change of " + change);
-																  if(change > 0)
-																	  createNotificationItem(useritem, "1", 0L, System.currentTimeMillis(), null, change);
-																  else if(change < 0)
-																	  createNotificationItem(useritem, "2", 0L, System.currentTimeMillis(), null, change);
-															  }
-															  // regardless, empty the pool and set new timestamp
-															  useritem.setKarmaPool(0);
-															  useritem.setLastKarmaPoolDrain(now);
-														  }
-														  else
-														  {
-															  useritem.setKarmaPool(useritem.getKarmaPool() + (new_karma - old_karma));
-														  }
-														  saveuseritem = true;
+														  ttl = 10;
+														  useritem.setKarmaPoolTTLMins(10);
 													  }
-													  else // the user's karma as reported by HN API right now is exactly the same as what we've got on file. Do nothing.
+													  
+													  if(useritem.getLastKarmaPoolDrain() < now - (ttl*60000)) // it's been more than ttl minutes
 													  {
-														  
+														  int change = useritem.getKarmaPool() + (new_karma - old_karma);
+														  System.out.println("Emptying karma pool and reporting change of " + change + " if the user is registered.");
+														  if(change != 0 && useritem.getRegistered()) // this change in karma for this firebase increment (30 sec) + the total change in the karma pool (10 mins) cancel each other out.
+														  {											  // create notification only if registered
+															  
+															  if(change > 0)
+																  createNotificationItem(useritem, "1", 0L, System.currentTimeMillis(), null, change);
+															  else if(change < 0)
+																  createNotificationItem(useritem, "2", 0L, System.currentTimeMillis(), null, change);
+														  }
+														  // regardless, empty the pool and set new timestamp
+														  useritem.setKarmaPool(0);
+														  useritem.setLastKarmaPoolDrain(now);
 													  }
+													  else
+													  {
+														  System.out.println("Updating karma pool existing=" + useritem.getKarmaPool() + " change=" + (new_karma - old_karma));
+														  useritem.setKarmaPool(useritem.getKarmaPool() + (new_karma - old_karma));
+													  }
+													  saveuseritem = true;
 												  }
+												  else // the user's karma as reported by HN API right now is exactly the same as what we've got on file. Do nothing.
+												  {
+													  
+												  }	 
 												  
 												  // keep track of "about" changes? I guess. Why not.
 												  String old_about = useritem.getHNAbout();
@@ -832,7 +832,6 @@ public class FirebaseListener implements ServletContextListener {
     		UserItem useritem = new UserItem();
     		JSONObject profile_jo = new JSONObject(result);
     		useritem.setHNKarma(profile_jo.getInt("karma"));
-    		useritem.setLastKarmaCheck(System.currentTimeMillis());
     		useritem.setHNSince(profile_jo.getLong("created"));
     		useritem.setId(profile_jo.getString("id"));
     		useritem.setRegistered(false);

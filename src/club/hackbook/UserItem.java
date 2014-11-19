@@ -141,9 +141,9 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public int getHNKarma() { return hn_karma; }
 	public void setHNKarma(int hn_karma) { this.hn_karma = hn_karma; }
 	
-	@DynamoDBAttribute(attributeName="last_karma_check")  
+	/*@DynamoDBAttribute(attributeName="last_karma_check")  
 	public long getLastKarmaCheck() {return last_karma_check; }
-	public void setLastKarmaCheck(long last_karma_check) { this.last_karma_check = last_karma_check; }
+	public void setLastKarmaCheck(long last_karma_check) { this.last_karma_check = last_karma_check; }*/
 	
 	@DynamoDBAttribute(attributeName="url_checking_mode")  
 	public String getURLCheckingMode() {return url_checking_mode; }  

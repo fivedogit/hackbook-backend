@@ -477,7 +477,6 @@ public class Endpoint extends HttpServlet {
 												}
 												else
 													useritem.setHNKarma(0); // if "karma" is somehow missing, set to 0
-												useritem.setLastKarmaCheck(now);
 
 												if(hn_user_jo.has("created")) 
 												{	
@@ -612,10 +611,9 @@ public class Endpoint extends HttpServlet {
 											sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 											useritem.setSeenHumanReadable(sdf.format(timestamp_at_entry));
 											useritem.setLastIPAddress(request.getRemoteAddr()); // necessary for spam and contest fraud prevention
-										}
-										if(now - useritem.getLastKarmaCheck() > 1200000) // if it's been 20 mins since last karma check, check it again
-										{
-											something_needs_updating = true;
+											
+											// Also update karma here, although FirebaseListener should be keeping track of all changes.
+											// so this is not entirely necessary. It's only necessary if FBL isn't doing its job (i.e. missing karma changes)
 											try{
 												String result = Jsoup
 													 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
@@ -630,9 +628,9 @@ public class Endpoint extends HttpServlet {
 											}
 											catch(JSONException jsone){
 												//
-											}
-											useritem.setLastKarmaCheck(now); // whether or not the above worked, act like it did to prevent repetitive karma checks
+											}									
 										}
+
 										if(something_needs_updating)
 											mapper.save(useritem);
 										
@@ -1143,7 +1141,6 @@ public class Endpoint extends HttpServlet {
 					target_useritem = new UserItem();
 					JSONObject profile_jo = new JSONObject(result);
 					target_useritem.setHNKarma(profile_jo.getInt("karma"));
-					target_useritem.setLastKarmaCheck(System.currentTimeMillis());
 					target_useritem.setHNSince(profile_jo.getLong("created"));
 					target_useritem.setId(profile_jo.getString("id"));
 					target_useritem.setRegistered(false);
