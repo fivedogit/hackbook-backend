@@ -52,6 +52,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private int karma_pool_ttl_mins;
 	private long hn_since;
 	private String hn_about;
+	private String hn_topcolor;
 	private String url_checking_mode;
 	private String notification_mode;
 	private String hn_authtoken;
@@ -140,11 +141,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	@DynamoDBAttribute(attributeName="hn_karma")  
 	public int getHNKarma() { return hn_karma; }
 	public void setHNKarma(int hn_karma) { this.hn_karma = hn_karma; }
-	
-	/*@DynamoDBAttribute(attributeName="last_karma_check")  
-	public long getLastKarmaCheck() {return last_karma_check; }
-	public void setLastKarmaCheck(long last_karma_check) { this.last_karma_check = last_karma_check; }*/
-	
+		
 	@DynamoDBAttribute(attributeName="url_checking_mode")  
 	public String getURLCheckingMode() {return url_checking_mode; }  
 	public void setURLCheckingMode(String url_checking_mode) { this.url_checking_mode = url_checking_mode; }
@@ -156,6 +153,10 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	@DynamoDBAttribute(attributeName="hn_about")  
 	public String getHNAbout() {return hn_about; }  
 	public void setHNAbout(String hn_about) { this.hn_about = hn_about; }
+	
+	@DynamoDBAttribute(attributeName="hn_topcolor")  
+	public String getHNTopcolor() {return hn_topcolor; }  
+	public void setHNTopcolor(String hn_topcolor) { this.hn_topcolor = hn_topcolor; }
 	
 	@DynamoDBAttribute(attributeName="hn_authtoken")  
 	public String getHNAuthToken() {return hn_authtoken; }  
@@ -257,6 +258,11 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			
 			user_jo.put("since", getSince());
 			user_jo.put("since_hr", sdf.format(getSince()));
+			
+			if(getHNTopcolor() == null || getHNTopcolor().isEmpty())
+				user_jo.put("hn_topcolor", "ff6600");
+			else
+				user_jo.put("hn_topcolor", getHNTopcolor());
 			
 			user_jo.put("hn_karma", getHNKarma());
 			user_jo.put("hn_since", getHNSince());

@@ -15,6 +15,8 @@ import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -375,6 +377,7 @@ public class Endpoint extends HttpServlet {
 				else if(method.equals("verifyHNUser")) // Using the generated auth token above, user has changed their "about" page to include the token. Verify it independently.
 				{										// This should probably be triggered by FirebaseListener for optimal performance.
 					String screenname = request.getParameter("screenname");
+					String topcolor = request.getParameter("topcolor");
 					if(screenname == null || screenname.isEmpty())
 					{
 						jsonresponse.put("message", "Screenname was null or empty.");
@@ -460,6 +463,10 @@ public class Endpoint extends HttpServlet {
 													useritem.setRegistered(true);
 													useritem.setURLCheckingMode("stealth");
 												}
+												if(topcolor != null && isValidTopcolor(topcolor))
+													useritem.setHNTopcolor(topcolor);
+												else
+													useritem.setHNTopcolor("ff6600");
 												useritem.setLastIPAddress(request.getRemoteAddr());
 												useritem.setSeen(now);
 												useritem.setSeenHumanReadable(sdf.format(now));
@@ -1161,6 +1168,14 @@ public class Endpoint extends HttpServlet {
 		} else {
 			return target_useritem;
 		}
+	}
+	
+	public boolean isValidTopcolor(String color)
+	{
+		// 3color "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
+		Pattern pattern = Pattern.compile("^[A-Fa-f0-9]{6}$");
+		Matcher matcher = pattern.matcher(color);
+		return matcher.matches();
 	}
 
 }

@@ -759,6 +759,7 @@ public class FirebaseListener implements ServletContextListener {
     {
     	if(!useritem.getRegistered()) // never create notification items for users that aren't registered.
     		return false;
+    	
     	long now = System.currentTimeMillis();
     	String now_str = Global.fromDecimalToBase62(7,action_time);
     	Random generator = new Random(); 
@@ -808,7 +809,8 @@ public class FirebaseListener implements ServletContextListener {
 	    	while(newsfeedset.size() > Global.NEWSFEED_SIZE_LIMIT)
 	    		newsfeedset.remove(newsfeedset.first());
 	    	useritem.setNewsfeedIds(newsfeedset);
-	    	useritem.setNewsfeedCount(useritem.getNewsfeedCount()+1);
+	    	if(useritem.getNotificationMode() != null && useritem.getNotificationMode().equals("newsfeed_and_notifications")) // only do this if they want news feed notifications
+	    		useritem.setNewsfeedCount(useritem.getNewsfeedCount()+1);
 	    	mapper.save(useritem);
 		}
 		else
