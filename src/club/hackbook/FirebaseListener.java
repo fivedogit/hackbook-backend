@@ -327,10 +327,10 @@ public class FirebaseListener implements ServletContextListener {
 												  if(old_karma != new_karma)
 												  {
 													  int ttl = useritem.getKarmaPoolTTLMins();
-													  if(ttl > 1440 || ttl < 1) // one day to one minute is the acceptable range. If not, reset it to 10 mins.
+													  if(ttl > 1440 || ttl < 5) // one day to five minutes is the acceptable range. If not, reset it to 15 mins.
 													  {
-														  ttl = 10;
-														  useritem.setKarmaPoolTTLMins(10);
+														  ttl = 15;
+														  useritem.setKarmaPoolTTLMins(ttl);
 													  }
 													  
 													  if(useritem.getLastKarmaPoolDrain() < now - (ttl*60000)) // it's been more than ttl minutes

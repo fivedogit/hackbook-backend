@@ -46,7 +46,6 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private String permission_level; 
 	private String last_ip_address;
 	private int hn_karma;		   // this is set on login and every 20 minutes by getUserSelf
-	private long last_karma_check; // 
 	private int karma_pool;				// rather than produce a NotificationItem every 30 seconds, let's wait some period of time
 	private long last_karma_pool_drain; // pool the karma changes together, then unload it all at once.
 	private int karma_pool_ttl_mins;
@@ -266,6 +265,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			
 			user_jo.put("hn_karma", getHNKarma());
 			user_jo.put("hn_since", getHNSince());
+			user_jo.put("karma_pool_ttl_mins", getKarmaPoolTTLMins());
 			
 			user_jo.put("hide_hn_new", getHideHNNew());
 			user_jo.put("hide_hn_threads", getHideHNThreads());
