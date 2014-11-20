@@ -736,6 +736,28 @@ public class Endpoint extends HttpServlet {
 												 mapper.save(useritem);
 												 jsonresponse.put("response_status", "success"); 
 											 }
+											 else if(which.equals("karma_pool_ttl")) 
+											 {
+												 if(!Global.isWholeNumeric(value))
+												 {
+													 jsonresponse.put("message", "Must be an int between 5 and 1440.");
+													 jsonresponse.put("response_status", "error");
+												 }
+												 else
+												 {
+													 int val = Integer.parseInt(value);
+													 if(val > 1440 || val < 5)
+													 {
+														 jsonresponse.put("message", "Must be an int between 5 and 1440.");
+														 jsonresponse.put("response_status", "error");
+													 }
+													 else
+													 {
+														 useritem.setKarmaPoolTTLMins(val);
+														 jsonresponse.put("response_status", "success"); 
+													 }
+												 }
+											 }
 											 else
 											 {
 												 jsonresponse.put("message", "Invalid which value.");
