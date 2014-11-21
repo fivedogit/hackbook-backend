@@ -50,7 +50,6 @@ public class FirebaseListener implements ServletContextListener {
     private String myId = ""; 
     GlobalvarItem firebase_owner_id_gvi = null;
     GlobalvarItem firebase_last_msfe_gvi = null;
-    GrowthHacker doer = null;
     
     @SuppressWarnings("unchecked")
     @Override
@@ -62,7 +61,6 @@ public class FirebaseListener implements ServletContextListener {
     		client.setRegion(Region.getRegion(Regions.US_EAST_1)); 
     		mapper = new DynamoDBMapper(client);
     		dynamo_config = new DynamoDBMapperConfig(DynamoDBMapperConfig.ConsistentReads.EVENTUAL);
-    		doer = new GrowthHacker();
     	} catch (IOException e) {
     		e.printStackTrace();
     	}
@@ -175,7 +173,7 @@ public class FirebaseListener implements ServletContextListener {
 											  {
 												  /*** NEW ITEM ***/
 												  System.out.println("item: " + item.intValue() + " " + "does not exist. Creating.");
-												  hnii = createNewHNItemFromAPIResult(result, true);
+												  hnii = createItemFromHNAPIResult(result, true);
 												  if(hnii != null)
 													  mapper.save(hnii);
 											  }
@@ -189,7 +187,7 @@ public class FirebaseListener implements ServletContextListener {
 												  else
 													  oldkids = (HashSet<Long>)hnii.getKids();
 												  
-												  HNItemItem new_hnii = createNewHNItemFromAPIResult(result, false);
+												  HNItemItem new_hnii = createItemFromHNAPIResult(result, false);
 												  if(new_hnii != null) // creation successful
 												  {
 													  if(new_hnii.getKids() != null) // if newkids is null, there's obviously nothing to do
@@ -217,7 +215,7 @@ public class FirebaseListener implements ServletContextListener {
 																		  .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
 																		  .ignoreContentType(true).execute();
 																  String kid_result = r2.body();
-																  hnitemitem = createNewHNItemFromAPIResult(kid_result, true);
+																  hnitemitem = createItemFromHNAPIResult(kid_result, true);
 																  if(hnitemitem != null)
 																	  mapper.save(hnitemitem);
 															  }
@@ -311,7 +309,9 @@ public class FirebaseListener implements ServletContextListener {
 		 							 if(useritem == null)
 		 							 {
 		 								 System.out.println("Creating " + screenname + ". ");
-		 								 createNewUser(result);
+		 								 useritem = createUserFromHNAPIResult(result);
+		 								 if(useritem != null)
+		 									 mapper.save(useritem);
 		 							 }
 		 							 else
 		 							 {
@@ -398,7 +398,7 @@ public class FirebaseListener implements ServletContextListener {
 												
 												  
 												  if(saveuseritem)
-													  mapper.save(useritem);
+													  mapper.save(useritem, new DynamoDBMapperConfig(SaveBehavior.CLOBBER));
 												  
 												  /*
 												  // no reason to keep track of this user's submitted items because any new items will appear in the ITEMS block above.
@@ -490,7 +490,7 @@ public class FirebaseListener implements ServletContextListener {
  
     }
     
-    private HNItemItem createNewHNItemFromAPIResult(String unchecked_result, boolean processFeeds)
+    private HNItemItem createItemFromHNAPIResult(String unchecked_result, boolean processFeeds)
     {
     	if(unchecked_result == null || unchecked_result.isEmpty())
     	{
@@ -566,8 +566,6 @@ public class FirebaseListener implements ServletContextListener {
 				  if(new_jo.has("url"))
 					  hnii.setURL(new_jo.getString("url"));
 				  
-				  mapper.save(hnii);
-				  
 				  long now = System.currentTimeMillis();
 				  if(processFeeds && ((hnii.getTime()*1000) > (now - 86400000))) 
 				  {
@@ -590,7 +588,6 @@ public class FirebaseListener implements ServletContextListener {
 					  //System.out.println("** NOT Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
 				  }
 				  
-				  doer.doIt(new_jo.getString("by"),new_jo.getLong("id"), mapper, dynamo_config);
 				  return hnii;
     		}
     		else
@@ -754,6 +751,71 @@ public class FirebaseListener implements ServletContextListener {
 		  System.out.println();
 			
     }
+    /***
+     * 
+     
+  	private String id;
+	private long since;
+	private long seen;
+	private String since_hr;
+	private String seen_hr;
+	private int notification_count;
+	private Set<String> notification_ids;
+	private int newsfeed_count;
+	private Set<String> newsfeed_ids;
+	private String this_access_token; 
+	private long this_access_token_expires;
+	private String permission_level; 
+	private int hn_karma;		   // this is set on login and every 20 minutes by getUserSelf
+	private int karma_pool;				// rather than produce a NotificationItem every 30 seconds, let's wait some period of time
+	private long last_karma_pool_drain; // pool the karma changes together, then unload it all at once.
+	private int karma_pool_ttl_mins;
+	private long hn_since;
+	private String hn_about;
+	private String hn_topcolor;
+	private String url_checking_mode;
+	private String notification_mode;
+	private String hn_authtoken;
+	private boolean registered;
+	private Set<String> followers;
+	private Set<String> following;
+	private boolean hide_hn_new;
+	private boolean hide_hn_threads;
+	private boolean hide_hn_comments;
+	private boolean hide_hn_show;
+	private boolean hide_hn_ask;
+	private boolean hide_hn_jobs;
+	private boolean hide_hn_submit;
+	private boolean hide_hn_feed;
+	private boolean hide_hn_notifications;
+     */
+    
+    private UserItem createUserFromHNAPIResult(String result)
+    {
+    	if(result == null || result.isEmpty())
+    		return null;
+    	try 
+    	{ 
+    		UserItem useritem = new UserItem();
+    		JSONObject profile_jo = new JSONObject(result);
+    		useritem.setId(profile_jo.getString("id"));
+    		useritem.setHNKarma(profile_jo.getInt("karma"));
+    		useritem.setHNSince(profile_jo.getLong("created"));
+    		useritem.setId(profile_jo.getString("id"));
+    		useritem.setRegistered(false);
+    		useritem.setURLCheckingMode("stealth");
+    		useritem.setKarmaPoolTTLMins(15);
+    		if(profile_jo.has("about"))
+    			useritem.setHNAbout(profile_jo.getString("about"));
+    		else
+    			useritem.setHNAbout("");
+    		return useritem;
+    	} catch (JSONException e) {
+    		e.printStackTrace();
+    		return null;
+    	}
+    }   
+
     
     private boolean createNotificationItem(UserItem useritem, String type, long hn_target_id, long action_time, String triggerer, int karma_change)
     {
@@ -827,7 +889,7 @@ public class FirebaseListener implements ServletContextListener {
 		}
     	return true;
     }
-    
+    /*
     private boolean createNewUser(String result)
     {
     	try { 
@@ -849,6 +911,6 @@ public class FirebaseListener implements ServletContextListener {
     		e.printStackTrace();
     		return false;
     	}
-    }
+    }*/
     
 }

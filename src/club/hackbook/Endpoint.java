@@ -54,7 +54,7 @@ public class Endpoint extends HttpServlet {
 	private AmazonDynamoDBClient client;
 	private DynamoDBMapper mapper;
 	private DynamoDBMapperConfig dynamo_config;
-	private boolean devel = false;
+	private boolean devel = true;
 
 	public void init(ServletConfig servlet_config) throws ServletException {
 		try {
@@ -453,9 +453,6 @@ public class Endpoint extends HttpServlet {
 													useritem = new UserItem();
 													//useritem.setNotificationIds();
 													useritem.setNotificationCount(0);
-													useritem.setOnDislike("button");
-													useritem.setOnLike("button");
-													useritem.setOnReply("button");
 													useritem.setPermissionLevel("user");
 													useritem.setId(screenname);
 													useritem.setSince(now);
@@ -467,7 +464,6 @@ public class Endpoint extends HttpServlet {
 													useritem.setHNTopcolor(topcolor);
 												else
 													useritem.setHNTopcolor("ff6600");
-												useritem.setLastIPAddress(request.getRemoteAddr());
 												useritem.setSeen(now);
 												useritem.setSeenHumanReadable(sdf.format(now));
 												useritem.setThisAccessToken(uuid_str);
@@ -617,7 +613,6 @@ public class Endpoint extends HttpServlet {
 											SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 											sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 											useritem.setSeenHumanReadable(sdf.format(timestamp_at_entry));
-											useritem.setLastIPAddress(request.getRemoteAddr()); // necessary for spam and contest fraud prevention
 											
 											// Also update karma here, although FirebaseListener should be keeping track of all changes.
 											// so this is not entirely necessary. It's only necessary if FBL isn't doing its job (i.e. missing karma changes)
@@ -641,12 +636,7 @@ public class Endpoint extends HttpServlet {
 										if(something_needs_updating)
 											mapper.save(useritem);
 										
-										boolean get_this_access_token = true; 
-										boolean get_notification_ids = true; 
-										boolean get_email_preferences = true; 
-										boolean get_notification_count = true;
-										boolean get_seen = true;
-										user_jo = useritem.getAsJSONObject(get_this_access_token, get_notification_ids, get_email_preferences, get_notification_count, get_seen, client, mapper, dynamo_config);
+										user_jo = useritem.getAsJSONObject(client, mapper, dynamo_config);
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("user_jo", user_jo);
 									}
@@ -663,62 +653,7 @@ public class Endpoint extends HttpServlet {
 										 else
 										 {	 
 											 jsonresponse.put("response_status", "success"); // default to success, then overwrite with error if necessary
-											 if(which.equals("hide_hn_new") || which.equals("hide_hn_threads") || which.equals("hide_hn_comments") || which.equals("hide_hn_show") ||
-													 which.equals("hide_hn_ask") || which.equals("hide_hn_jobs") || which.equals("hide_hn_submit") || which.equals("hide_hn_feed")  || which.equals("hide_hn_notifications"))
-											 {
-												 if(value.equals("show") || value.equals("hide"))
-												 {
-													 boolean yo = true;
-													 if(value.equals("hide"))
-														 yo = false;
-													 if(which.equals("hide_hn_new"))
-														 useritem.setHideHNNew(yo);
-													 else if(which.equals("hide_hn_threads"))
-														 useritem.setHideHNThreads(yo);
-													 else if(which.equals("hide_hn_comments"))
-														 useritem.setHideHNComments(yo);
-													 else if(which.equals("hide_hn_show"))
-														 useritem.setHideHNShow(yo);
-													 else if(which.equals("hide_hn_ask"))
-														 useritem.setHideHNAsk(yo);
-													 else if(which.equals("hide_hn_jobs"))
-														 useritem.setHideHNJobs(yo);
-													 else if(which.equals("hide_hn_submit"))
-														 useritem.setHideHNSubmit(yo);
-													 else if(which.equals("hide_hn_feed"))
-														 useritem.setHideHNFeed(yo);
-													 else if(which.equals("hide_hn_notifications"))
-														 useritem.setHideHNNotifications(yo);
-													 mapper.save(useritem);	
-													 jsonresponse.put("response_status", "success"); 
-												 }
-												 else
-												 {
-													 jsonresponse.put("message", "Invalid value.");
-													 jsonresponse.put("response_status", "error");
-												 }
-											 }
-											 else if(which.equals("onreply") || which.equals("onlike") 
-													 || which.equals("ondislike"))
-											 {
-												 if(value.equals("button") || value.equals("do nothing"))
-												 {
-													 if(which.equals("onreply"))
-														 useritem.setOnReply(value);
-													 else if(which.equals("onlike"))
-														 useritem.setOnLike(value);
-													 else if(which.equals("ondislike"))
-														 useritem.setOnDislike(value);
-													 mapper.save(useritem);	
-													 jsonresponse.put("response_status", "success"); 
-												 }
-												 else
-												 {
-													 jsonresponse.put("message", "Invalid value.");
-													 jsonresponse.put("response_status", "error");
-												 }
-											 }
-											 else if(which.equals("url_checking_mode")) 
+											 if(which.equals("url_checking_mode")) 
 											 {
 												 if(value.equals("notifications_only"))
 													 useritem.setURLCheckingMode("notifications_only");
