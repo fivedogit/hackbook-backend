@@ -54,7 +54,7 @@ public class Endpoint extends HttpServlet {
 	private AmazonDynamoDBClient client;
 	private DynamoDBMapper mapper;
 	private DynamoDBMapperConfig dynamo_config;
-	private boolean devel = true;
+	private boolean devel = false;
 
 	public void init(ServletConfig servlet_config) throws ServletException {
 		try {
