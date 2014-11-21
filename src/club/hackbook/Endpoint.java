@@ -689,6 +689,7 @@ public class Endpoint extends HttpServlet {
 													 else
 													 {
 														 useritem.setKarmaPoolTTLMins(val);
+														 mapper.save(useritem);
 														 jsonresponse.put("response_status", "success"); 
 													 }
 												 }

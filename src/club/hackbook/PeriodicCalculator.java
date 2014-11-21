@@ -65,7 +65,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 		periodic_last_msfe_gvi.setNumberValue(entry);
 		mapper.save(periodic_last_msfe_gvi);
 
-		int limit = 40;
+		int limit = 42;
 		
 		// get user table size
 		// this isn't exact... updated hourly within Dynamo, but good enough.
@@ -73,7 +73,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 		long tablesize = tableDescription.getItemCount();
 		
 		// create a set of <limit> random longs
-		HashSet<Long> randomlongs = new HashSet<Long>();
+		/*HashSet<Long> randomlongs = new HashSet<Long>();
 		Random generator = new Random(); 
 		long randomlong = 0L; // this will produce numbers that can be represented by 3 base62 digits
 		while(randomlongs.size() < limit) // this will keep adding until there are > limit unique longs in the set
@@ -81,14 +81,14 @@ public class PeriodicCalculator extends java.lang.Thread {
 			randomlong = nextLong(generator, tablesize);
 			randomlongs.add(randomlong); 
 			System.out.println(randomlong);
-		}
+		}*/
 		
 		DynamoDBScanExpression userScanExpression = new DynamoDBScanExpression();
 		List<UserItem> userScanResult = mapper.scan(UserItem.class, userScanExpression, dynamo_config);
 	
 		Comparator<UserItem> comparator = new FollowerCountComparator();
 		PriorityQueue<UserItem> queue = new PriorityQueue<UserItem>(limit, comparator);
-		HashSet<UserItem> random_users = new HashSet<UserItem>();
+		//HashSet<UserItem> random_users = new HashSet<UserItem>();
 		Long x = 0L;
 		for (UserItem useritem : userScanResult) { 
 			
@@ -99,8 +99,8 @@ public class PeriodicCalculator extends java.lang.Thread {
 				queue.remove();
 			
 			// if this value of x is in the randomlongs set, add the useritem to the random_users set
-			if(randomlongs.contains(x)) 
-				random_users.add(useritem);
+		//	if(randomlongs.contains(x)) 
+		//		random_users.add(useritem);
 			x++;
 		}
 		
@@ -132,7 +132,7 @@ public class PeriodicCalculator extends java.lang.Thread {
 			System.err.println("JSONException trying to set global vars for random users and most followed users");
 		}
 		
-		Iterator<UserItem> user_it = random_users.iterator();
+		/*Iterator<UserItem> user_it = random_users.iterator();
 		System.out.println("Random users:");
 		JSONArray random_users_ja = new JSONArray();
 		try
@@ -154,18 +154,18 @@ public class PeriodicCalculator extends java.lang.Thread {
 		catch(JSONException jsone)
 		{
 			System.err.println("JSONException trying to set global vars for random users and most followed users");
-		}
+		}*/
 		
 		System.out.println(most_followed_users_ja);
-		System.out.println(random_users_ja);
+		//System.out.println(random_users_ja);
 		
 		// now save both jas to the database
 		GlobalvarItem most_followed_users_gvi = mapper.load(GlobalvarItem.class, "most_followed_users", dynamo_config);
-		GlobalvarItem random_users_gvi = mapper.load(GlobalvarItem.class, "random_users", dynamo_config);
+		//GlobalvarItem random_users_gvi = mapper.load(GlobalvarItem.class, "random_users", dynamo_config);
 		most_followed_users_gvi.setStringValue(most_followed_users_ja.toString());
-		random_users_gvi.setStringValue(random_users_ja.toString());
+		//random_users_gvi.setStringValue(random_users_ja.toString());
 		mapper.save(most_followed_users_gvi);
-		mapper.save(random_users_gvi);
+		//mapper.save(random_users_gvi);
 		
 		long exit = System.currentTimeMillis();
 		System.out.println("=== " + super.getId() +  " PeriodicCalculator Done. elapsed=" + ((exit - entry)/1000) + "s");
