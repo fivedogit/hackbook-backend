@@ -54,6 +54,8 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private boolean registered;
 	private Set<String> followers;
 	private Set<String> following;
+	private boolean hide_embedded_counts;
+	private boolean hide_inline_follow;
 	
 	@DynamoDBHashKey(attributeName="id") 
 	public String getId() {return id; }
@@ -157,6 +159,14 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public int getKarmaPoolTTLMins() { return karma_pool_ttl_mins; }
 	public void setKarmaPoolTTLMins(int karma_pool_ttl_mins) { this.karma_pool_ttl_mins = karma_pool_ttl_mins; }
 	
+	@DynamoDBAttribute(attributeName="hide_embedded_counts")  
+	public boolean getHideEmbeddedCounts() {return hide_embedded_counts; }  
+	public void setHideEmbeddedCounts(boolean hide_embedded_counts) { this.hide_embedded_counts = hide_embedded_counts; }
+	
+	@DynamoDBAttribute(attributeName="hide_inline_follow")  
+	public boolean getHideInlineFollow() {return hide_inline_follow; }  
+	public void setHideInlineFollow(boolean hide_inline_follow) { this.hide_inline_follow = hide_inline_follow; }
+	
 	@DynamoDBIgnore
 	public boolean isValid(String inc_this_access_token)
 	{
@@ -208,7 +218,9 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 				user_jo.put("notification_ids", getNotificationIds());
 			if(getNewsfeedIds() != null)
 				user_jo.put("newsfeed_ids", getNewsfeedIds());
-						
+			user_jo.put("hide_embedded_counts", this.getHideEmbeddedCounts());
+			user_jo.put("hide_inline_follow", this.getHideInlineFollow());			
+			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

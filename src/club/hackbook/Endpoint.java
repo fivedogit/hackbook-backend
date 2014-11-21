@@ -694,6 +694,32 @@ public class Endpoint extends HttpServlet {
 													 }
 												 }
 											 }
+											 else if(which.equals("hide_embedded_counts") || which.equals("hide_inline_follow")) 
+											 {
+												 if(value.equals("show") || value.equals("hide"))
+												 {
+													 if(which.equals("hide_embedded_counts"))
+													 {
+														 if(value.equals("show"))
+															 useritem.setHideEmbeddedCounts(false);
+														 else
+															 useritem.setHideEmbeddedCounts(true);
+													 }
+													 else // which.equals("hide_inline_follow"))
+													 {
+														 if(value.equals("show"))
+															 useritem.setHideInlineFollow(false);
+														 else
+															 useritem.setHideInlineFollow(true);
+													 }
+													 mapper.save(useritem);
+												 }
+												 else
+												 {
+													 jsonresponse.put("message", "Must be \"show\" or \"hide\".");
+													 jsonresponse.put("response_status", "error");
+												 }
+											 }
 											 else
 											 {
 												 jsonresponse.put("message", "Invalid which value.");
