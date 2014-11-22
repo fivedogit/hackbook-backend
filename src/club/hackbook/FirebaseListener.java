@@ -567,7 +567,7 @@ public class FirebaseListener implements ServletContextListener {
 					  hnii.setURL(new_jo.getString("url"));
 				  
 				  long now = System.currentTimeMillis();
-				  if(processFeeds && ((hnii.getTime()*1000) > (now - 86400000))) 
+				  if(processFeeds && ((hnii.getTime()*1000) > (now - 86400000))) // make sure this is within the past day before sending any notifications
 				  {
 					  //System.out.println("** Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " > cutoff=" + (now-86400000));
 					  if(hnii.getType().equals("comment") && !hnii.getDead() && !hnii.getDeleted())
@@ -585,7 +585,7 @@ public class FirebaseListener implements ServletContextListener {
 				  }
 				  else
 				  {
-					  //System.out.println("** NOT Processing new HNItemItem for feeds. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
+					  System.out.println("** NOT Processing new HNItemItem for feeds bc it's too old. item time=" + (hnii.getTime()*1000) + " < cutoff=" + (now-86400000));
 				  }
 				  
 				  return hnii;
@@ -615,42 +615,48 @@ public class FirebaseListener implements ServletContextListener {
 		   *                                                                                                             
 		   */
     	
-		  if(hnii == null)
+		  if(hnii == null) // if the hnii input is invalid, return.
 		  {
-			  System.out.print(" which is NOT on file in the db.");
+			  System.out.println("processNewCommentForFeeds(hnii): Cannot proceed because hnii is null. Returning.");
+			  return;
+		  }
+		  
+		  if(hnii.getParent() == 0)
+		  {
+			  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was 0L. Can't send reply notifications. Moving on to process follow notifications.");
 		  }
 		  else
-		  {
+		  { 
 			  System.out.print("Processing comment for notification feeds. parent=" + hnii.getParent() + " which is ");
 			  HNItemItem parent_hnii = mapper.load(HNItemItem.class, hnii.getParent(), dynamo_config);
-			  if(parent_hnii != null)
+			  if(parent_hnii == null)
 			  {
-				  System.out.print(" in the database and whose by=" + parent_hnii.getBy() + " is ");
+				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() seemed valid, but not found in database. Can't process reply notifications. Moving on to process follow notifications.");
+			  }
+			  else
+			  { 
+				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was found in the database. Checking if author is in the DB.");
 				  UserItem parent_author = mapper.load(UserItem.class, parent_hnii.getBy(), dynamo_config);
 				  if(parent_author == null)
 				  {
-					  System.out.print("NOT in the database.");
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent is not NOT in the database, so we're skipping reply notifications.");
 				  }
 				  else
 				  {
-					  System.out.print("in the database ");
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database, checking if they are registered...");
 					  if(parent_author.getRegistered())
 					  {
-						  System.out.print("and registered!");
-						  if(hnii.getType().equals("comment"))
+						  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database AND registered. Creating notifications.");
+						  if(parent_hnii.getType().equals("comment"))
 							  createNotificationItem(parent_author, "5", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 5, a comment parent_author wrote was replied to
-						  else if(hnii.getType().equals("story"))
+						  else if(parent_hnii.getType().equals("story"))
 							  createNotificationItem(parent_author, "6", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 6, a story parent_author wrote was replied to
 					  }
 					  else
 					  {
-						  System.out.print("but NOT a registered user.");
+						  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database but NOT registered. Skipping notifications.");
 					  }
 				  }
-			  }
-			  else
-			  {
-				  System.out.print("NOT in the database. Moving on.");
 			  }
 		  }
 		  
@@ -658,23 +664,25 @@ public class FirebaseListener implements ServletContextListener {
 		  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
 		  if(author == null)
 		  {
-			  System.out.print("Author of this comment is NOT in the database.");
+			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment is NOT in the database. Skipping notifications.");
 		  }
 		  else
 		  {
-			  System.out.print("Author of this comment IS in the database");
+			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment IS in the database. Checking to see if they have any followers.");
 			  HashSet<String> followers = (HashSet<String>) author.getFollowers();
 			  if(followers == null)
 			  {
-				  System.out.print(" but getFollowers() was null.");
+				  System.out.println("processNewCommentForFeeds(hnii): No followers.");
 			  }
 			  else if(followers.isEmpty())
 			  {
-				  System.out.print(" but getFollowers() was empty.");
+				  System.out.println("processNewCommentForFeeds(hnii): No followers. (getFollwers() was Empty (not null) and we saved it to null just now.)");
+				  author.setFollowers(null);
+				  mapper.save(author);
 			  }
 			  else
 			  { 
-				  System.out.print(" and getFollowers() was not empty.");
+				  System.out.println("processNewCommentForFeeds(hnii): author has followers.");
 				  Iterator<String> followers_it = followers.iterator();
 				  String currentfollower = "";
 				  UserItem followeruseritem = null;
@@ -684,13 +692,12 @@ public class FirebaseListener implements ServletContextListener {
 					  followeruseritem = mapper.load(UserItem.class, currentfollower, dynamo_config);
 					  if(followeruseritem != null && followeruseritem.getRegistered()) // if a user is following this commenter, they should be registered, but I guess this check is fine.						
 					  {  
+						  System.out.println("processNewCommentForFeeds(hnii): Found a valid, registered follower (" + followeruseritem + ") and creating notification.");
 						  createNotificationItem(followeruseritem, "8", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 8, a user you're following commented
 					  }
 				  }
-				  System.out.print("]");
 			  }
 		  }
-		  System.out.println();
     }
     
     private void processNewStoryForFeeds(HNItemItem hnii) throws JSONException
@@ -705,33 +712,38 @@ public class FirebaseListener implements ServletContextListener {
 		   *                                                                                             
 		   *                                                                                             
 		   */
-    	  if(!hnii.getType().equals("story") || hnii.getDead() || hnii.getDeleted() || hnii.getURL() == null)
-    	  	  return;
+    	  if(hnii == null || !hnii.getType().equals("story") || hnii.getDead() || hnii.getDeleted())
+    	  {
+    		  System.out.println("processNewStoryForFeeds(hnii): hnii was null, or not a \"story\" or dead or deleted. Skipping processing of feeds.");
+    		  return;
+    	  }
 
     	  if(hnii.getScore() > 1) // this is a brand new story, but already has an upvote
-			  System.out.println("BRAND NEW STORY (with url) THAT ALREADY HAS AN UPVOTE");
+			  System.out.println("NOTE: This is a BRAND NEW STORY (with url) THAT ALREADY HAS AN UPVOTE. Proceeding.");
 		  
 		  // check for followers of this new story's \"by\" and alert them
 		  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
 		  if(author == null)
 		  {
-			  System.out.print(" Author of this story is NOT in the database.");
+			  System.out.println("processNewStoryForFeeds(hnii): Author of this story is NOT in the database. Skipping processing of feeds.");
 		  }
 		  else
 		  {
-			  System.out.print(" Author of this story IS in the database");
+			  System.out.println("processNewStoryForFeeds(hnii): Author of this story is in the database. See if they have any followers.");
 			  HashSet<String> followers = (HashSet<String>) author.getFollowers();
 			  if(followers == null)
 			  {
-				  System.out.print(" but getFollowers() was null.");
+				  System.out.println("processNewStoryForFeeds(hnii): No followers.");
 			  }
 			  else if(followers.isEmpty())
 			  {
-				  System.out.print(" but getFollowers() was empty.");
+				  System.out.println("processNewStoryForFeeds(hnii): No followers. (getFollwers() was Empty (not null) and we saved it to null just now.)");
+				  author.setFollowers(null);
+				  mapper.save(author);
 			  }
 			  else
-			  { 
-				  System.out.print(" and getFollowers() was not empty. [");
+			  {
+				  System.out.println("processNewStoryForFeeds(hnii): author has followers.");
 				  Iterator<String> followers_it = followers.iterator();
 				  String currentfollower = "";
 				  UserItem followeruseritem = null;
@@ -741,15 +753,12 @@ public class FirebaseListener implements ServletContextListener {
 					  followeruseritem = mapper.load(UserItem.class, currentfollower, dynamo_config);
 					  if(followeruseritem != null && followeruseritem.getRegistered()) // if a user is following this poster, they should be registered, but I guess this check is fine.		
 					  {  
+						  System.out.println("processNewStoryForFeeds(hnii): Found a valid, registered follower (" + followeruseritem + ") and creating notification.");
 						  createNotificationItem(followeruseritem, "7", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 7, a user you're following posted a story with a URL
-						  System.out.print(followeruseritem.getId() + ", ");
 					  }
 				  }
-				  System.out.print("]");
 			  }
 		  }
-		  System.out.println();
-			
     }
     /***
      * 
