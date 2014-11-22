@@ -204,6 +204,11 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 				user_jo.put("hn_topcolor", getHNTopcolor());
 			user_jo.put("hn_karma", getHNKarma());
 			user_jo.put("hn_since", getHNSince());
+			if(getKarmaPoolTTLMins() > 1440 || getKarmaPoolTTLMins() < 5)
+			{
+				setKarmaPoolTTLMins(10);
+				mapper.save(this);
+			}
 			user_jo.put("karma_pool_ttl_mins", getKarmaPoolTTLMins());
 			if(getFollowing() != null)
 				user_jo.put("following", getFollowing());
