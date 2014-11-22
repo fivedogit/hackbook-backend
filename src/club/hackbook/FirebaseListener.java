@@ -615,6 +615,8 @@ public class FirebaseListener implements ServletContextListener {
 		   *                                                                                                             
 		   */
     	
+    	// FIXME, need a check here. If a reply notification is fired, follow notification should be suppressed
+    	
 		  if(hnii == null) // if the hnii input is invalid, return.
 		  {
 			  System.out.println("processNewCommentForFeeds(hnii): Cannot proceed because hnii is null. Returning.");
