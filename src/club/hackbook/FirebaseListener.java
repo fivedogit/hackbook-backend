@@ -605,18 +605,18 @@ public class FirebaseListener implements ServletContextListener {
     
     private void processNewCommentForFeeds(HNItemItem hnii) throws JSONException
     {
-    	 /***
-		   *     _   _  _____ _    _   _____ _____ ________  ___           _____ ________  ______  ___ _____ _   _ _____ 
-		   *    | \ | ||  ___| |  | | |_   _|_   _|  ___|  \/  |          /  __ \  _  |  \/  ||  \/  ||  ___| \ | |_   _|
-		   *    |  \| || |__ | |  | |   | |   | | | |__ | .  . |  ______  | /  \/ | | | .  . || .  . || |__ |  \| | | |  
-		   *    | . ` ||  __|| |/\| |   | |   | | |  __|| |\/| | |______| | |   | | | | |\/| || |\/| ||  __|| . ` | | |  
-		   *    | |\  || |___\  /\  /  _| |_  | | | |___| |  | |          | \__/\ \_/ / |  | || |  | || |___| |\  | | |  
-		   *    \_| \_/\____/ \/  \/   \___/  \_/ \____/\_|  |_/           \____/\___/\_|  |_/\_|  |_/\____/\_| \_/ \_/  
-		   *                                                                                                             
-		   */
+    	/***
+    	 *    ____________ _____ _____  _____ _____ _____   _____ ________  ______  ___ _____ _   _ _____  ______ ___________  ______ _____ ___________  _____ 
+    	 *    | ___ \ ___ \  _  /  __ \|  ___/  ___/  ___| /  __ \  _  |  \/  ||  \/  ||  ___| \ | |_   _| |  ___|  _  | ___ \ |  ___|  ___|  ___|  _  \/  ___|
+    	 *    | |_/ / |_/ / | | | /  \/| |__ \ `--.\ `--.  | /  \/ | | | .  . || .  . || |__ |  \| | | |   | |_  | | | | |_/ / | |_  | |__ | |__ | | | |\ `--. 
+    	 *    |  __/|    /| | | | |    |  __| `--. \`--. \ | |   | | | | |\/| || |\/| ||  __|| . ` | | |   |  _| | | | |    /  |  _| |  __||  __|| | | | `--. \
+    	 *    | |   | |\ \\ \_/ / \__/\| |___/\__/ /\__/ / | \__/\ \_/ / |  | || |  | || |___| |\  | | |   | |   \ \_/ / |\ \  | |   | |___| |___| |/ / /\__/ /
+    	 *    \_|   \_| \_|\___/ \____/\____/\____/\____/   \____/\___/\_|  |_/\_|  |_/\____/\_| \_/ \_/   \_|    \___/\_| \_| \_|   \____/\____/|___/  \____/ 
+    	 *                                                                                                                                                     
+    	 *                                                                                                                                                     
+    	 */
     	
-    	// FIXME, need a check here. If a reply notification is fired, follow notification should be suppressed
-    	
+    	  HashSet<String> already_notified_users = new HashSet<String>(); 
 		  if(hnii == null) // if the hnii input is invalid, return.
 		  {
 			  System.out.println("processNewCommentForFeeds(hnii): Cannot proceed because hnii is null. Returning.");
@@ -629,7 +629,7 @@ public class FirebaseListener implements ServletContextListener {
 		  }
 		  else
 		  { 
-			  System.out.print("Processing comment for notification feeds. parent=" + hnii.getParent() + " which is ");
+			  System.out.print("processNewCommentForFeeds(hnii): Processing comment by " + hnii.getBy() + " for notification feeds. parent=" + hnii.getParent());
 			  HNItemItem parent_hnii = mapper.load(HNItemItem.class, hnii.getParent(), dynamo_config);
 			  if(parent_hnii == null)
 			  {
@@ -637,26 +637,32 @@ public class FirebaseListener implements ServletContextListener {
 			  }
 			  else
 			  { 
-				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was found in the database. Checking if author is in the DB.");
+				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was found in the database. Checking if author (" + parent_hnii.getBy() + ") is in the DB.");
 				  UserItem parent_author = mapper.load(UserItem.class, parent_hnii.getBy(), dynamo_config);
 				  if(parent_author == null)
 				  {
-					  System.out.println("processNewCommentForFeeds(hnii): author of parent is not NOT in the database, so we're skipping reply notifications.");
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") is not NOT in the database, so we're skipping reply notifications.");
 				  }
 				  else
 				  {
-					  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database, checking if they are registered...");
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database, checking if they are registered...");
 					  if(parent_author.getRegistered())
 					  {
-						  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database AND registered. Creating notifications.");
+						  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database AND registered. Creating notifications.");
 						  if(parent_hnii.getType().equals("comment"))
+						  {
 							  createNotificationItem(parent_author, "5", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 5, a comment parent_author wrote was replied to
+							  already_notified_users.add(parent_author.getId());
+						  }
 						  else if(parent_hnii.getType().equals("story"))
+						  {
 							  createNotificationItem(parent_author, "6", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 6, a story parent_author wrote was replied to
+							  already_notified_users.add(parent_author.getId());
+						  }						  
 					  }
 					  else
 					  {
-						  System.out.println("processNewCommentForFeeds(hnii): author of parent IS in the database but NOT registered. Skipping notifications.");
+						  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database but NOT registered. Skipping notifications.");
 					  }
 				  }
 			  }
@@ -666,11 +672,11 @@ public class FirebaseListener implements ServletContextListener {
 		  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
 		  if(author == null)
 		  {
-			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment is NOT in the database. Skipping notifications.");
+			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment (" + hnii.getBy() + ") is NOT in the database. Skipping notifications.");
 		  }
 		  else
 		  {
-			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment IS in the database. Checking to see if they have any followers.");
+			  System.out.println("processNewCommentForFeeds(hnii): Author of this comment (" + hnii.getBy() + ") IS in the database. Checking to see if they have any followers.");
 			  HashSet<String> followers = (HashSet<String>) author.getFollowers();
 			  if(followers == null)
 			  {
@@ -684,7 +690,7 @@ public class FirebaseListener implements ServletContextListener {
 			  }
 			  else
 			  { 
-				  System.out.println("processNewCommentForFeeds(hnii): author has followers.");
+				  System.out.println("processNewCommentForFeeds(hnii): author (" + hnii.getBy() + ") has followers.");
 				  Iterator<String> followers_it = followers.iterator();
 				  String currentfollower = "";
 				  UserItem followeruseritem = null;
@@ -694,8 +700,9 @@ public class FirebaseListener implements ServletContextListener {
 					  followeruseritem = mapper.load(UserItem.class, currentfollower, dynamo_config);
 					  if(followeruseritem != null && followeruseritem.getRegistered()) // if a user is following this commenter, they should be registered, but I guess this check is fine.						
 					  {  
-						  System.out.println("processNewCommentForFeeds(hnii): Found a valid, registered follower (" + followeruseritem + ") and creating notification.");
-						  createNotificationItem(followeruseritem, "8", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 8, a user you're following commented
+						  System.out.println("processNewCommentForFeeds(hnii): Found a valid, registered follower (" + followeruseritem.getId() + ") and creating notification.");
+						  if(!already_notified_users.contains(followeruseritem.getId())) // only send notification if the user hasn't been alerted in the reply-checking block above.
+							  createNotificationItem(followeruseritem, "8", hnii.getId(), hnii.getTime()*1000, author.getId(), 0); // feedable event 8, a user you're following commented
 					  }
 				  }
 			  }
@@ -705,15 +712,16 @@ public class FirebaseListener implements ServletContextListener {
     private void processNewStoryForFeeds(HNItemItem hnii) throws JSONException
     {
     	/***
-		   *     _   _  _____ _    _   _____ _____ ________  ___           _____ _____ _____________   __
-		   *    | \ | ||  ___| |  | | |_   _|_   _|  ___|  \/  |          /  ___|_   _|  _  | ___ \ \ / /
-		   *    |  \| || |__ | |  | |   | |   | | | |__ | .  . |  ______  \ `--.  | | | | | | |_/ /\ V / 
-		   *    | . ` ||  __|| |/\| |   | |   | | |  __|| |\/| | |______|  `--. \ | | | | | |    /  \ /  
-		   *    | |\  || |___\  /\  /  _| |_  | | | |___| |  | |          /\__/ / | | \ \_/ / |\ \  | |  
-		   *    \_| \_/\____/ \/  \/   \___/  \_/ \____/\_|  |_/          \____/  \_/  \___/\_| \_| \_/  
-		   *                                                                                             
-		   *                                                                                             
-		   */
+    	 *    ____________ _____ _____  _____ _____ _____   _____ _____ _____________   __ ______ ___________  ______ _____ ___________  _____ 
+    	 *    | ___ \ ___ \  _  /  __ \|  ___/  ___/  ___| /  ___|_   _|  _  | ___ \ \ / / |  ___|  _  | ___ \ |  ___|  ___|  ___|  _  \/  ___|
+    	 *    | |_/ / |_/ / | | | /  \/| |__ \ `--.\ `--.  \ `--.  | | | | | | |_/ /\ V /  | |_  | | | | |_/ / | |_  | |__ | |__ | | | |\ `--. 
+    	 *    |  __/|    /| | | | |    |  __| `--. \`--. \  `--. \ | | | | | |    /  \ /   |  _| | | | |    /  |  _| |  __||  __|| | | | `--. \
+    	 *    | |   | |\ \\ \_/ / \__/\| |___/\__/ /\__/ / /\__/ / | | \ \_/ / |\ \  | |   | |   \ \_/ / |\ \  | |   | |___| |___| |/ / /\__/ /
+    	 *    \_|   \_| \_|\___/ \____/\____/\____/\____/  \____/  \_/  \___/\_| \_| \_/   \_|    \___/\_| \_| \_|   \____/\____/|___/  \____/ 
+    	 *                                                                                                                                     
+    	 *                                                                                                                                     
+    	 */
+    	
     	  if(hnii == null || !hnii.getType().equals("story") || hnii.getDead() || hnii.getDeleted())
     	  {
     		  System.out.println("processNewStoryForFeeds(hnii): hnii was null, or not a \"story\" or dead or deleted. Skipping processing of feeds.");
@@ -900,28 +908,4 @@ public class FirebaseListener implements ServletContextListener {
 		}
     	return true;
     }
-    /*
-    private boolean createNewUser(String result)
-    {
-    	try { 
-    		UserItem useritem = new UserItem();
-    		JSONObject profile_jo = new JSONObject(result);
-    		useritem.setHNKarma(profile_jo.getInt("karma"));
-    		useritem.setHNSince(profile_jo.getLong("created"));
-    		useritem.setId(profile_jo.getString("id"));
-    		useritem.setRegistered(false);
-    		useritem.setURLCheckingMode("stealth");
-    		if(profile_jo.has("about"))
-    			useritem.setHNAbout(profile_jo.getString("about"));
-    		else
-    			useritem.setHNAbout("");
-    		mapper.save(useritem);
-    		return true;
-    	} catch (JSONException e) {
-    		// TODO Auto-generated catch block
-    		e.printStackTrace();
-    		return false;
-    	}
-    }*/
-    
 }
