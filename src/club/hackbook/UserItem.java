@@ -170,7 +170,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	@DynamoDBIgnore
 	public boolean isValid(String inc_this_access_token)
 	{
-		if(inc_this_access_token == null)
+		if(inc_this_access_token == null || getThisAccessToken() == null)
 			return false;
 		long now = System.currentTimeMillis();
 		if(getThisAccessToken().equals(inc_this_access_token) && getThisAccessTokenExpires() >= now)

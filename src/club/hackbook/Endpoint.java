@@ -282,228 +282,273 @@ public class Endpoint extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		JSONObject jsonresponse = new JSONObject();
 		long timestamp_at_entry = System.currentTimeMillis();
-		try 
+		String method = request.getParameter("method");
+		if(!request.isSecure() && !(devel == true && request.getRemoteAddr().equals("127.0.0.1")))
 		{
-			String method = request.getParameter("method");
-			if(!request.isSecure() && !(devel == true && request.getRemoteAddr().equals("127.0.0.1")))
+			try 
 			{
 				jsonresponse.put("message", "This API endpoint must be communicated with securely.");
 				jsonresponse.put("response_status", "error");
 			}
-			else if(method == null)
+			catch(JSONException jsone)
+			{
+				out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET secure connection check. method=" + method + "\"}");
+				System.err.println("endpoint: JSONException thrown in Endpoint GET secure connection check. " + jsone.getMessage());
+				jsone.printStackTrace();
+				return;
+			}	
+		}
+		else if(method == null)
+		{
+			try 
 			{
 				jsonresponse.put("message", "Method not specified. This should probably produce HTML output reference information at some point.");
 				jsonresponse.put("response_status", "error");
 			}
-			else
+			catch(JSONException jsone)
 			{
-				/***
-				 *     _   _ _____ _   _         ___  _   _ _____ _   _  ___  ___ _____ _____ _   _ ___________  _____ 
-				 *    | \ | |  _  | \ | |       / _ \| | | |_   _| | | | |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___|
-				 *    |  \| | | | |  \| |______/ /_\ \ | | | | | | |_| | | .  . || |__   | | | |_| | | | | | | |\ `--. 
-				 *    | . ` | | | | . ` |______|  _  | | | | | | |  _  | | |\/| ||  __|  | | |  _  | | | | | | | `--. \
-				 *    | |\  \ \_/ / |\  |      | | | | |_| | | | | | | | | |  | || |___  | | | | | \ \_/ / |/ / /\__/ /
-				 *    \_| \_/\___/\_| \_/      \_| |_/\___/  \_/ \_| |_/ \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/ 
-				 */
-				if(method.equals("searchForHNItem"))
+				out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET method value sanity check.\"}");
+				System.err.println("endpoint: JSONException thrown in Endpoint GET method value sanity check. " + jsone.getMessage());
+				jsone.printStackTrace();
+				return;
+			}	
+		}
+		else
+		{
+			/***
+			 *     _   _ _____ _   _         ___  _   _ _____ _   _  ___  ___ _____ _____ _   _ ___________  _____ 
+			 *    | \ | |  _  | \ | |       / _ \| | | |_   _| | | | |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___|
+			 *    |  \| | | | |  \| |______/ /_\ \ | | | | | | |_| | | .  . || |__   | | | |_| | | | | | | |\ `--. 
+			 *    | . ` | | | | . ` |______|  _  | | | | | | |  _  | | |\/| ||  __|  | | |  _  | | | | | | | `--. \
+			 *    | |\  \ \_/ / |\  |      | | | | |_| | | | | | | | | |  | || |___  | | | | | \ \_/ / |/ / /\__/ /
+			 *    \_| \_/\___/\_| \_/      \_| |_/\___/  \_/ \_| |_/ \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/ 
+			 */
+			if(method.equals("searchForHNItem") || method.equals("getHNAuthToken") || method.equals("verifyHNUser") || method.equals("getMostFollowedUsers"))
+			{
+				try 
 				{
-					String url_str = request.getParameter("url");
-					if(url_str != null && !url_str.isEmpty())
+					if(method.equals("searchForHNItem"))
 					{
-						HashSet<HNItemItem> hnitems = getAllHNItemsFromURL(url_str, 0);
-						HNItemItem hnii = null;
-						if(hnitems == null)
-							hnii = null;
-						else if(hnitems.size() == 1)
-							hnii = hnitems.iterator().next();
-						else if(hnitems.size() > 1)
-						{
-							System.out.println("There are multiple items matching this URL. Selecting the one with the highest score.");
-							Iterator<HNItemItem> it = hnitems.iterator();
-							long max = 0; 
-							HNItemItem current = null;
-							while(it.hasNext())
+						
+							String url_str = request.getParameter("url");
+							if(url_str != null && !url_str.isEmpty())
 							{
-								current = it.next();
-								if(current.getScore() > max)
+								HashSet<HNItemItem> hnitems = getAllHNItemsFromURL(url_str, 0);
+								HNItemItem hnii = null;
+								if(hnitems == null)
+									hnii = null;
+								else if(hnitems.size() == 1)
+									hnii = hnitems.iterator().next();
+								else if(hnitems.size() > 1)
 								{
-									hnii = current;
-									max = current.getScore();
+									System.out.println("There are multiple items matching this URL. Selecting the one with the highest score.");
+									Iterator<HNItemItem> it = hnitems.iterator();
+									long max = 0; 
+									HNItemItem current = null;
+									while(it.hasNext())
+									{
+										current = it.next();
+										if(current.getScore() > max)
+										{
+											hnii = current;
+											max = current.getScore();
+										}
+									}
+								}
+														
+								if(hnii != null)
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("objectID", hnii.getId());
+								}
+								else
+								{
+									jsonresponse.put("response_status", "success");
+									jsonresponse.put("objectID", "-1");
 								}
 							}
-						}
-												
-						if(hnii != null)
+							else
+							{
+								jsonresponse.put("response_status", "error");
+								jsonresponse.put("message", "Invalid \"url\" parameter.");	
+							}
+							
+					}
+					else if(method.equals("getHNAuthToken")) // user has just chosen to log in with HN. Generate auth token for this screenname, save it, return it.
+					{
+						String screenname = request.getParameter("screenname");
+						if(screenname == null || screenname.isEmpty())
 						{
-							jsonresponse.put("response_status", "success");
-							jsonresponse.put("objectID", hnii.getId());
-						}
-						else
-						{
-							jsonresponse.put("response_status", "success");
-							jsonresponse.put("objectID", "-1");
-						}
-					}
-					else
-					{
-						jsonresponse.put("response_status", "error");
-						jsonresponse.put("message", "Invalid \"url\" parameter.");	
-					}
-				}
-				else if(method.equals("getHNAuthToken")) // user has just chosen to log in with HN. Generate auth token for this screenname, save it, return it.
-				{
-					String screenname = request.getParameter("screenname");
-					if(screenname == null || screenname.isEmpty())
-					{
-						jsonresponse.put("message", "Screenname was null or empty.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{
-						UserItem useritem = mapper.load(UserItem.class, screenname, dynamo_config);
-						if(useritem == null)
-						{
-							useritem = new UserItem();
-							useritem.setRegistered(false);
-						}
-						useritem.setId(screenname);
-						String uuid = UUID.randomUUID().toString().replaceAll("-","");
-						useritem.setHNAuthToken(uuid);
-						mapper.save(useritem);
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("token", uuid);
-					}
-				}
-				else if(method.equals("verifyHNUser")) // Using the generated auth token above, user has changed their "about" page to include the token. Verify it independently.
-				{										// This should probably be triggered by FirebaseListener for optimal performance.
-					String screenname = request.getParameter("screenname");
-					String topcolor = request.getParameter("topcolor");
-					if(screenname == null || screenname.isEmpty())
-					{
-						jsonresponse.put("message", "Screenname was null or empty.");
-						jsonresponse.put("response_status", "error");
-					}
-					else
-					{
-						UserItem useritem = mapper.load(UserItem.class, screenname, dynamo_config);
-						if(useritem == null)
-						{
-							jsonresponse.put("message", "No user by that screenname was found in the database.");
+							jsonresponse.put("message", "Screenname was null or empty.");
 							jsonresponse.put("response_status", "error");
 						}
 						else
-						{	
-							String stored_uuid = useritem.getHNAuthToken();
-							int x = 0;
-							String result = "";
-							String about = "";
-							String checked_uuid = "";
-							int bi = 0;
-							int ei = 0;
-							int limit = 7;
-							String hn_karma_str = "0";
-							String hn_since_str = "0";
-							JSONObject hn_user_jo = null;
-							
-							// wait 10 seconds to do first try. This helps prevent read or socket timeout errors on tries 0, 1 and 2 which are unlikely to work anyway.
-							try {
-								java.lang.Thread.sleep(11000);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							x=2;
-							while(x < limit) // 2 (11 sec), 3 (16 sec), 4 (21 sec), 5 (26 sec), 6 (31 sec)
+						{
+							UserItem useritem = mapper.load(UserItem.class, screenname, dynamo_config);
+							if(useritem == null)
 							{
-								try
+								useritem = new UserItem();
+								useritem.setRegistered(false);
+							}
+							useritem.setId(screenname);
+							String uuid = UUID.randomUUID().toString().replaceAll("-","");
+							useritem.setHNAuthToken(uuid);
+							mapper.save(useritem);
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("token", uuid);
+						}
+					}
+					else if(method.equals("verifyHNUser")) // Using the generated auth token above, user has changed their "about" page to include the token. Verify it independently.
+					{										// This should probably be triggered by FirebaseListener for optimal performance.
+						String screenname = request.getParameter("screenname");
+						String topcolor = request.getParameter("topcolor");
+						if(screenname == null || screenname.isEmpty())
+						{
+							jsonresponse.put("message", "Screenname was null or empty.");
+							jsonresponse.put("response_status", "error");
+						}
+						else
+						{
+							UserItem useritem = mapper.load(UserItem.class, screenname, dynamo_config);
+							if(useritem == null)
+							{
+								jsonresponse.put("message", "No user by that screenname was found in the database.");
+								jsonresponse.put("response_status", "error");
+							}
+							else
+							{	
+								String stored_uuid = useritem.getHNAuthToken();
+								int x = 0;
+								String result = "";
+								String about = "";
+								String checked_uuid = "";
+								int bi = 0;
+								int ei = 0;
+								int limit = 7;
+								String hn_karma_str = "0";
+								String hn_since_str = "0";
+								JSONObject hn_user_jo = null;
+								
+								// wait 10 seconds to do first try. This helps prevent read or socket timeout errors on tries 0, 1 and 2 which are unlikely to work anyway.
+								try {
+									java.lang.Thread.sleep(11000);
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								x=2;
+								while(x < limit) // 2 (11 sec), 3 (16 sec), 4 (21 sec), 5 (26 sec), 6 (31 sec)
 								{
-									result = Jsoup
-											 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
-											 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
-											 .ignoreContentType(true).execute().body();
-									
-									//System.out.println("Endpoint.verifyHNUser():" + result);
-									hn_user_jo = new JSONObject(result);
-									about = hn_user_jo.getString("about");
-									bi = about.indexOf("BEGIN|");
-									if(bi != -1)                                   // entering here means the loop WILL break 1 of 3 ways: No |ENDTOKEN, match or no match.
+									try
 									{
-										ei = about.indexOf("|END");
-										if(ei == -1)
+										result = Jsoup
+												 .connect("https://hacker-news.firebaseio.com/v0/user/" + screenname  + ".json")
+												 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
+												 .ignoreContentType(true).execute().body();
+										
+										System.out.println("Endpoint.verifyHNUser():" + result);
+										if(result == null || result.equals("null") || result.isEmpty())
 										{
 											jsonresponse.put("response_status", "error");
-											jsonresponse.put("message", "Found \"BEGIN|\" but not \"|END\"");
+											jsonresponse.put("message", "Hackbook encountered an error attempting to validate you with the HN API. If you are a new user or one with low karma, the HN API does not recognize you and Hackbook will not be able to verify your account. Sorry.");
 											break;
 										}
 										else
-										{
-											checked_uuid = about.substring(bi + 6, ei);
-											if(checked_uuid.equals(stored_uuid))
-											{	
-												SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-												sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
-												
-												String uuid_str = UUID.randomUUID().toString().replaceAll("-","");
-												Calendar cal = Calendar.getInstance();
-												long now = cal.getTimeInMillis();
-												cal.add(Calendar.YEAR, 1);
-												long future = cal.getTimeInMillis();
-												if(!useritem.getRegistered()) // if user is not yet registered, populate default values
+										{	
+											hn_user_jo = new JSONObject(result);
+											about = hn_user_jo.getString("about");
+											bi = about.indexOf("BEGIN|");
+											if(bi != -1)                                   // entering here means the loop WILL break 1 of 3 ways: No |ENDTOKEN, match or no match.
+											{
+												ei = about.indexOf("|END");
+												if(ei == -1)
 												{
-													useritem = new UserItem();
-													//useritem.setNotificationIds();
-													useritem.setNotificationCount(0);
-													useritem.setPermissionLevel("user");
-													useritem.setId(screenname);
-													useritem.setSince(now);
-													useritem.setSinceHumanReadable(sdf.format(now));
-													useritem.setRegistered(true);
-													useritem.setURLCheckingMode("stealth");
-												}
-												if(topcolor != null && isValidTopcolor(topcolor))
-													useritem.setHNTopcolor(topcolor);
-												else
-													useritem.setHNTopcolor("ff6600");
-												useritem.setSeen(now);
-												useritem.setSeenHumanReadable(sdf.format(now));
-												useritem.setThisAccessToken(uuid_str);
-												useritem.setThisAccessTokenExpires(future);
-												useritem.setHNAuthToken(null);
-												
-												if(hn_user_jo.has("karma")) 
-												{	
-													hn_karma_str = hn_user_jo.getString("karma");
-													if(Global.isWholeNumeric(hn_karma_str))
-														useritem.setHNKarma(Integer.parseInt(hn_karma_str));
-													else
-														useritem.setHNKarma(0); // if "karma" is somehow not a whole integer, set to 0
+													jsonresponse.put("response_status", "error");
+													jsonresponse.put("message", "Found \"BEGIN|\" but not \"|END\"");
+													break;
 												}
 												else
-													useritem.setHNKarma(0); // if "karma" is somehow missing, set to 0
+												{
+													checked_uuid = about.substring(bi + 6, ei);
+													if(checked_uuid.equals(stored_uuid))
+													{	
+														SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+														sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+														
+														String uuid_str = UUID.randomUUID().toString().replaceAll("-","");
+														Calendar cal = Calendar.getInstance();
+														long now = cal.getTimeInMillis();
+														cal.add(Calendar.YEAR, 1);
+														long future = cal.getTimeInMillis();
+														if(!useritem.getRegistered()) // if user is not yet registered, populate default values
+														{
+															useritem = new UserItem();
+															//useritem.setNotificationIds();
+															useritem.setNotificationCount(0);
+															useritem.setPermissionLevel("user");
+															useritem.setId(screenname);
+															useritem.setSince(now);
+															useritem.setSinceHumanReadable(sdf.format(now));
+															useritem.setRegistered(true);
+															useritem.setURLCheckingMode("stealth");
+														}
+														if(topcolor != null && isValidTopcolor(topcolor))
+															useritem.setHNTopcolor(topcolor);
+														else
+															useritem.setHNTopcolor("ff6600");
+														useritem.setSeen(now);
+														useritem.setSeenHumanReadable(sdf.format(now));
+														useritem.setThisAccessToken(uuid_str);
+														useritem.setThisAccessTokenExpires(future);
+														useritem.setHNAuthToken(null);
+														
+														if(hn_user_jo.has("karma")) 
+														{	
+															hn_karma_str = hn_user_jo.getString("karma");
+															if(Global.isWholeNumeric(hn_karma_str))
+																useritem.setHNKarma(Integer.parseInt(hn_karma_str));
+															else
+																useritem.setHNKarma(0); // if "karma" is somehow not a whole integer, set to 0
+														}
+														else
+															useritem.setHNKarma(0); // if "karma" is somehow missing, set to 0
 
-												if(hn_user_jo.has("created")) 
-												{	
-													hn_since_str = hn_user_jo.getString("created");
-													if(Global.isWholeNumeric(hn_since_str))
-														useritem.setHNSince(Integer.parseInt(hn_since_str));
+														if(hn_user_jo.has("created")) 
+														{	
+															hn_since_str = hn_user_jo.getString("created");
+															if(Global.isWholeNumeric(hn_since_str))
+																useritem.setHNSince(Integer.parseInt(hn_since_str));
+															else
+																useritem.setHNSince(0); // if "karma" is somehow not a whole integer, set to 0
+														}
+														else
+															useritem.setHNSince(0); // if "karma" is somehow missing, set to 0
+														
+														mapper.save(useritem);
+														
+														//System.out.println("Endpoint.loginWithGoogleOrShowRegistration() user already registered, logging in");
+														jsonresponse.put("response_status", "success");
+														jsonresponse.put("verified", true);
+														jsonresponse.put("this_access_token", uuid_str);
+														jsonresponse.put("screenname", useritem.getId());
+														break;
+													}
 													else
-														useritem.setHNSince(0); // if "karma" is somehow not a whole integer, set to 0
+													{
+														System.out.println("Loop " + x + ", Found BEGIN| and |END, but the string didn't match the DB. Trying again in 5 seconds.");
+														try {
+															java.lang.Thread.sleep(5000);
+														} catch (InterruptedException e) {
+															// TODO Auto-generated catch block
+															e.printStackTrace();
+														}
+														x++;
+													}
 												}
-												else
-													useritem.setHNSince(0); // if "karma" is somehow missing, set to 0
-												
-												mapper.save(useritem);
-												
-												//System.out.println("Endpoint.loginWithGoogleOrShowRegistration() user already registered, logging in");
-												jsonresponse.put("response_status", "success");
-												jsonresponse.put("verified", true);
-												jsonresponse.put("this_access_token", uuid_str);
-												jsonresponse.put("screenname", useritem.getId());
-												break;
 											}
 											else
 											{
-												System.out.println("Loop " + x + ", Found BEGIN| and |END, but the string didn't match the DB. Trying again in 5 seconds.");
+												System.out.println("Loop " + x + ", Did not find BEGIN| or |END. Trying again in 5 seconds.");
 												try {
 													java.lang.Thread.sleep(5000);
 												} catch (InterruptedException e) {
@@ -514,78 +559,63 @@ public class Endpoint extends HttpServlet {
 											}
 										}
 									}
-									else
+									catch(IOException ioe)
 									{
-										System.out.println("Loop " + x + ", Did not find BEGIN| or |END. Trying again in 5 seconds.");
-										try {
-											java.lang.Thread.sleep(5000);
-										} catch (InterruptedException e) {
-											// TODO Auto-generated catch block
-											e.printStackTrace();
-										}
-										x++;
+										System.err.println("IOException attempting to verifyHNUser. Ignore and continue.");
 									}
 								}
-								catch(IOException ioe)
+								if(x == limit)
 								{
-									System.err.println("IOException attempting to verifyHNUser. Ignore and continue.");
+									System.out.println("Checked " + limit + " times and failed. Returning response_status = error.");
+									jsonresponse.put("response_status", "error");
+									jsonresponse.put("message", "Checked " + limit + " times and didn't find \"BEGIN|\"");
 								}
-							}
-							if(x == limit)
-							{
-								System.out.println("Checked " + limit + " times and failed. Returning response_status = error.");
-								jsonresponse.put("response_status", "error");
-								jsonresponse.put("message", "Checked " + limit + " times and didn't find \"BEGIN|\"");
 							}
 						}
 					}
+					else if(method.equals("getMostFollowedUsers"))
+					{
+						GlobalvarItem gvi = mapper.load(GlobalvarItem.class, "most_followed_users", dynamo_config);
+						if(gvi != null)
+						{
+							jsonresponse.put("response_status", "success");
+							jsonresponse.put("most_followed_users", new JSONArray(gvi.getStringValue()));
+						}
+						else
+						{
+							jsonresponse.put("response_status", "error");
+							jsonresponse.put("message", "Couldn't get most_followed_users value from DB.");
+						}
+					}
 				}
-				else if(method.equals("getMostFollowedUsers"))
+				catch(JSONException jsone)
 				{
-					GlobalvarItem gvi = mapper.load(GlobalvarItem.class, "most_followed_users", dynamo_config);
-					if(gvi != null)
-					{
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("most_followed_users", new JSONArray(gvi.getStringValue()));
-					}
-					else
-					{
-						jsonresponse.put("response_status", "error");
-						jsonresponse.put("message", "Couldn't get most_followed_users value from DB.");
-					}
-				}
-				else if(method.equals("getRandomUsers"))
-				{
-					GlobalvarItem gvi = mapper.load(GlobalvarItem.class, "random_users", dynamo_config);
-					if(gvi != null)
-					{
-						jsonresponse.put("response_status", "success");
-						jsonresponse.put("random_users", new JSONArray(gvi.getStringValue()));
-					}
-					else
-					{
-						jsonresponse.put("response_status", "error");
-						jsonresponse.put("message", "Couldn't get random_users value from DB.");
-					}
-				}
-				 /***
-				  *    ___  ___ _____ _____ _   _ ___________  _____  ______ _____ _____     _   _ _____ ___________    ___  _   _ _____ _   _ 
-				  *    |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___| | ___ \  ___|  _  |   | | | /  ___|  ___| ___ \  / _ \| | | |_   _| | | |
-				  *    | .  . || |__   | | | |_| | | | | | | |\ `--.  | |_/ / |__ | | | |   | | | \ `--.| |__ | |_/ / / /_\ \ | | | | | | |_| |
-				  *    | |\/| ||  __|  | | |  _  | | | | | | | `--. \ |    /|  __|| | | |   | | | |`--. \  __||    /  |  _  | | | | | | |  _  |
-				  *    | |  | || |___  | | | | | \ \_/ / |/ / /\__/ / | |\ \| |___\ \/' /_  | |_| /\__/ / |___| |\ \  | | | | |_| | | | | | | |
-				  *    \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/  \_| \_\____/ \_/\_(_)  \___/\____/\____/\_| \_| \_| |_/\___/  \_/ \_| |_/
-				  *                                                                                                                            
-				  *                                                                                                                            
-				  */
-				 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
-						 method.equals("followUser") || method.equals("unfollowUser") ||
-						 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
-						 method.equals("resetNewsfeedCount")
-						 // || method.equals("noteItemLikeOrDislike") || method.equals("haveILikedThisItem") || method.equals("haveIDislikedThisItem")
-						 )
+					out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET non-auth methods. method=" + method + "\"}");
+					System.err.println("endpoint: JSONException thrown in Endpoint GET non-auth methods. " + jsone.getMessage());
+					jsone.printStackTrace();
+					return;
+				}	
+			}
+			 /***
+			  *    ___  ___ _____ _____ _   _ ___________  _____  ______ _____ _____     _   _ _____ ___________    ___  _   _ _____ _   _ 
+			  *    |  \/  ||  ___|_   _| | | |  _  |  _  \/  ___| | ___ \  ___|  _  |   | | | /  ___|  ___| ___ \  / _ \| | | |_   _| | | |
+			  *    | .  . || |__   | | | |_| | | | | | | |\ `--.  | |_/ / |__ | | | |   | | | \ `--.| |__ | |_/ / / /_\ \ | | | | | | |_| |
+			  *    | |\/| ||  __|  | | |  _  | | | | | | | `--. \ |    /|  __|| | | |   | | | |`--. \  __||    /  |  _  | | | | | | |  _  |
+			  *    | |  | || |___  | | | | | \ \_/ / |/ / /\__/ / | |\ \| |___\ \/' /_  | |_| /\__/ / |___| |\ \  | | | | |_| | | | | | | |
+			  *    \_|  |_/\____/  \_/ \_| |_/\___/|___/  \____/  \_| \_\____/ \_/\_(_)  \___/\____/\____/\_| \_| \_| |_/\___/  \_/ \_| |_/
+			  *                                                                                                                            
+			  *                                                                                                                            
+			  */
+			 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
+					 method.equals("followUser") || method.equals("unfollowUser") ||
+					 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
+					 method.equals("resetNewsfeedCount")
+					 // || method.equals("noteItemLikeOrDislike") || method.equals("haveILikedThisItem") || method.equals("haveIDislikedThisItem")
+					 )
+			 {
+				 try
 				 {
-					 // for all of these methods, check email/this_access_token. Weak check first (to avoid database hits). Then check database.
+					// for all of these methods, check email/this_access_token. Weak check first (to avoid database hits). Then check database.
 					 String screenname = request.getParameter("screenname"); // the requester's email
 					 String this_access_token = request.getParameter("this_access_token"); // the requester's auth
 					 if(!(screenname == null || screenname.isEmpty()) && !(this_access_token == null || this_access_token.isEmpty())) 
@@ -602,6 +632,8 @@ public class Endpoint extends HttpServlet {
 								{	
 									if (method.equals("getUserSelf")) // I think this might be redundant (or maybe the one below is)
 									{
+										
+										
 										JSONObject user_jo = null;
 										long now = System.currentTimeMillis();
 										
@@ -642,7 +674,6 @@ public class Endpoint extends HttpServlet {
 									}
 									else if (method.equals("setUserPreference")) // email, this_access_token, target_email (of user to get) // also an admin method
 									{
-										 //System.out.println("Endpoint setUserPreference() begin: which=" + which + " and value=" + value);
 										 String which = request.getParameter("which");
 										 String value = request.getParameter("value");
 										 if(which == null || value == null)
@@ -652,6 +683,7 @@ public class Endpoint extends HttpServlet {
 										 }
 										 else
 										 {	 
+											 System.out.println("Endpoint setUserPreference() begin: which=" + which + " and value=" + value);
 											 jsonresponse.put("response_status", "success"); // default to success, then overwrite with error if necessary
 											 if(which.equals("url_checking_mode")) 
 											 {
@@ -1085,27 +1117,48 @@ public class Endpoint extends HttpServlet {
 						 jsonresponse.put("message", "You must be logged in to do that.");
 					 }
 				 }
-				 else
+				 catch(JSONException jsone)
+				 {
+					 out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET methods requiring user auth.\"}");
+					 System.err.println("endpoint: JSONException thrown in Endpoint GET methods requiring user auth. " + jsone.getMessage());
+					 jsone.printStackTrace();
+					 return;
+				 }	
+			 }
+			 else
+			 {
+				 try
 				 {
 					 jsonresponse.put("response_status", "error");
 					 jsonresponse.put("message", "Unsupported method. method=" + method);
 				 }
-			}
-			long timestamp_at_exit = System.currentTimeMillis();
-			long elapsed = timestamp_at_exit - timestamp_at_entry;
+				 catch(JSONException jsone)
+				 {
+					 out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET unsupported method response generation.\"}");
+					 System.err.println("endpoint: JSONException thrown in Endpoint GET unsupported method response generation. " + jsone.getMessage());
+					 jsone.printStackTrace();
+					 return;
+				 }	
+			 }
+		}
+		long timestamp_at_exit = System.currentTimeMillis();
+		long elapsed = timestamp_at_exit - timestamp_at_entry;
+		try{
 			jsonresponse.put("elapsed", elapsed);
 			jsonresponse.put("msfe", timestamp_at_exit);
 			if(method != null)
 				jsonresponse.put("method", method);
-			if(devel == true)
-				System.out.println("response=" + jsonresponse);	// respond with object, success response, or error 
-			out.println(jsonresponse);
 		}
 		catch(JSONException jsone)
 		{
-			out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET\"}");
-			System.err.println("endpoint: JSONException thrown in large try block. " + jsone.getMessage());
-		}		
+			out.println("{ \"response_status\": \"error\", \"message\": \"JSONException caught in Endpoint GET elapsed and msfe generation.\"}");
+			System.err.println("endpoint: JSONException thrown in Endpoint GET elapsed and msfe generation. " + jsone.getMessage());
+			jsone.printStackTrace();
+			return;
+		}	
+		if(devel == true)
+			System.out.println("response=" + jsonresponse);	// respond with object, success response, or error 
+		out.println(jsonresponse);	
 		return; 	
 	}
 
