@@ -761,26 +761,31 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 		ni.setType(type);
 		if(type.equals("1") || type.equals("2"))
 		{
-			ni.setHNRootId(0L);																	
+			ni.setHNRootId(0L);
+			ni.setHNRootStoryId(0L);
+			ni.setHNRootCommentId(0L);
 			ni.setHNTargetId(0L);
 			ni.setTriggerer(null);
 			ni.setKarmaChange(karma_change);
 		}
-		else if(type.equals("3") || type.equals("4") || type.equals("6") || type.equals("7")) // a story you wrote was upvoted, downvoted or commented on...
+		else if(type.equals("3") || type.equals("4") || type.equals("7")) // a story you wrote was upvoted, downvoted or a user you're following wrote a story
 		{
 			ni.setHNTargetId(hn_target_id);
-			ni.setHNRootId(hn_target_id);																	 //  or a user you're following posted a story (+/-) url
+			ni.setHNRootId(hn_target_id);
+			ni.setHNRootStoryId(hn_target_id);
+			ni.setHNRootCommentId(0L);
 			ni.setTriggerer(triggerer);
 		}
-		else if(type.equals("5") || type.equals("8")) // a comment you wrote was commented on or a user you're following commented. Crawl back to root.
+		else if(type.equals("5") || type.equals("6") || type.equals("8")) // a comment(5) or story(6) you wrote was commented on or a user you're following commented(8). Crawl back to root.
 		{
 			ni.setHNTargetId(hn_target_id);
 			System.out.println("Found an item we need to step back on to find root.");
-			long root = Global.findRootItem(hn_target_id);
-			if(root == -1)
+			HashMap<String,Long> roots = Global.findRootStoryAndComment(hn_target_id);
+			if(roots == null)
 				return false; // couldn't find root, so bail
-			else
-				ni.setHNRootId(root);
+			ni.setHNRootId(roots.get("story"));
+			ni.setHNRootStoryId(roots.get("story"));
+			ni.setHNRootCommentId(roots.get("comment")); // for #6, this should always be the same as hn_target_id
 			ni.setTriggerer(triggerer);
 		}
 		mapper.save(ni);

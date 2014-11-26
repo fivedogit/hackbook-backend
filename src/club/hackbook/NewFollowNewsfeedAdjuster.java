@@ -2,6 +2,7 @@ package club.hackbook;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
@@ -83,20 +84,26 @@ public class NewFollowNewsfeedAdjuster extends java.lang.Thread {
 				 {
 					 notification_id = now_str + randompart_str + "8";
 					 ni.setType("8");
-					 long root = Global.findRootItemLocal(current.getId(), mapper, dynamo_config);
-					 if(root == -1)
+					 HashMap<String,Long> roots = Global.findRootStoryAndCommentLocal(current.getId(), mapper, dynamo_config);
+					 if(roots == null)
 					 {
 						 System.out.println("Couldn't find root, so skipping to next.");
-						 continue; // couldn't find root, so skipping to next
+						 continue; // couldn't find roots, so skipping to next
 					 }
 					 else
-						 ni.setHNRootId(root);
+					 {
+						 ni.setHNRootId(roots.get("story"));
+						 ni.setHNRootStoryId(roots.get("story"));
+						 ni.setHNRootCommentId(roots.get("comment")); // for #6, this should always be the same as hn_target_id
+					 }
 				 }
 				 else if(current.getType().equals("story")) // // if it's a story, root is the same as the item id
 				 {
 					 notification_id = now_str + randompart_str + "7";
 					 ni.setType("7");
 					 ni.setHNRootId(current.getId());
+					 ni.setHNRootStoryId(current.getId());
+					 ni.setHNRootCommentId(0L);
 				 }
 				 ni.setId(notification_id);
 				 ni.setActionMSFE(current.getTime()*1000);

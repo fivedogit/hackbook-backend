@@ -926,7 +926,8 @@ public class Endpoint extends HttpServlet {
 														 ai.setType("0");
 														 //ai.setHNTargetId(null);
 														 ai.setTriggerer(useritem.getId());
-														 //ai.setHNRootId(hn_target_id);
+														 //ai.setHNRootStoryId();
+														 //ai.setHNRootCommentId();
 														 mapper.save(ai);
 														 System.out.println("notification item " + notification_id + " has been saved in the db.");
 														 
@@ -1059,7 +1060,8 @@ public class Endpoint extends HttpServlet {
 															 ni.setActionMSFE(Long.parseLong(item.get("action_msfe").getN()));
 															 ni.setMSFE(Long.parseLong(item.get("msfe").getN()));
 															 ni.setHNTargetId(Long.parseLong(item.get("hn_target_id").getN()));
-															 ni.setHNRootId(Long.parseLong(item.get("hn_root_id").getN()));
+															 ni.setHNRootStoryId(Long.parseLong(item.get("hn_root_story_id").getN()));
+															 ni.setHNRootCommentId(Long.parseLong(item.get("hn_root_comment_id").getN()));
 															 ni.setKarmaChange(Integer.parseInt(item.get("karma_change").getN()));*/
 															 new_newsfeedset.add(item.get("id").getS());
 														 }

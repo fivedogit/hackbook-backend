@@ -4,6 +4,7 @@ package club.hackbook;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.HashMap;
 
 import org.jsoup.Jsoup;
 
@@ -102,7 +103,7 @@ public class Global {
 	        return tempVal;
 	    }	
 	 
-	 public static long findRootItemLocal(long hn_target_id, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config)
+	/* public static long findRootItemLocal(long hn_target_id, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config)
 	 {
 		 boolean foundroot = false;
 		 int x = 0;
@@ -130,8 +131,43 @@ public class Global {
 			x++;
 		 }
 		 return -1; 
+	 }*/
+	 
+	 public static HashMap<String,Long> findRootStoryAndCommentLocal(long hn_target_id, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config)
+	 {
+		 HashMap<String,Long> returnmap = new HashMap<String,Long>();
+		 int x = 0;
+		 int limit = 15; // limit the number of possible loops to 15, just in case
+		 long lastcomment = 0L;
+		 while(x < limit)
+		 {
+			// System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
+			HNItemItem hnii = mapper.load(HNItemItem.class, hn_target_id, dynamo_config);
+			if(hnii == null)
+			{
+				return null;
+			}
+			else if(hnii.getType().equals("story"))
+			{
+				 returnmap.put("comment", lastcomment);
+				 returnmap.put("story", hnii.getId());
+				 return returnmap;
+			}
+			else if(hnii.getType().equals("comment") && hnii.getParent() != 0L)
+			{
+				lastcomment = hnii.getId();
+				hn_target_id = hnii.getParent();
+			}
+			else
+			{
+				return null;
+			}
+			x++;
+		 }
+		 return null; 
 	 }
 	 
+	 /*
 	 public static long findRootItem(long hn_target_id)
 	 {
 		 boolean foundroot = false;
@@ -175,7 +211,7 @@ public class Global {
 			 return -1;
 		 }
 		 return -1; 
-	 }
+	 }*/
 	
 	 public static String findRootItemTitle(long hn_target_id)
 	 {
@@ -218,6 +254,56 @@ public class Global {
 		 }
 		 return null; 
 	 }
+	 
+	 public static HashMap<String,Long> findRootStoryAndComment(long hn_target_id)
+	 {
+		 HashMap<String,Long> returnmap = new HashMap<String,Long>();
+		 long currentid = hn_target_id;
+		 JSONObject currentobject = null;
+		 String result = null;
+		 int x = 0;
+		 int limit = 15; // limit the number of possible loops to 15, just in case
+		 long lastcomment = 0L;
+		 try{
+			 while(x < limit)
+			 {
+				// System.out.print("Getting item https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json ");
+				 result = Jsoup
+						 .connect("https://hacker-news.firebaseio.com/v0/item/" + currentid  + ".json")
+						 .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36")
+						 .ignoreContentType(true).execute().body();
+				 currentobject = new JSONObject(result);
+				 //System.out.println(" which had type=" + currentobject.getString("type"));
+				 if(!currentobject.getString("type").equals("comment"))
+				 {
+					 //System.out.println("FOUND NON-COMMENT! type=" + currentobject.getString("type") + " setting hn_root_id=" +currentobject.getInt("id"));
+					 returnmap.put("comment", lastcomment);
+					 returnmap.put("story", currentobject.getLong("id"));
+					 return returnmap;
+				 }
+				 else
+				 {
+					 if(currentobject.has("parent"))
+					 {
+						 lastcomment = currentobject.getLong("id");
+						 currentid = currentobject.getLong("parent"); // move to previous
+					 }
+					 else
+						 break; // this is a failsafe in case we come across a comment that has no parent object. In this case, leave the root blank and handle properly on the client side.
+				 }
+				 x++;
+			 }
+		 }
+		 catch(IOException ioe)
+		 {
+			 return null;
+		 }
+		 catch(JSONException jsone)
+		 {
+			 return null;
+		 }
+		 return null; 
+	 } 
 	 
 	public static void main(String [] args)
 	{

@@ -37,6 +37,8 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	private long hn_target_id;
 	private String triggerer;
 	private long hn_root_id;
+	private long hn_root_story_id; // same as hn_root_id
+	private long hn_root_comment_id;
 	private int karma_change;
 	
 	@DynamoDBHashKey(attributeName="id") 
@@ -67,9 +69,17 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	public String getTriggerer() {return triggerer; }
 	public void setTriggerer(String triggerer) { this.triggerer = triggerer; }
 	
-	@DynamoDBAttribute(attributeName="hn_root_id") 
+	@DynamoDBAttribute(attributeName="hn_root_id") // this is the root STORY
 	public long getHNRootId() {return hn_root_id; }
 	public void setHNRootId(long hn_root_id) { this.hn_root_id = hn_root_id; }
+	
+	@DynamoDBAttribute(attributeName="hn_root_story_id") // this is the root STORY
+	public long getHNRootStoryId() {return hn_root_story_id; }
+	public void setHNRootStoryId(long hn_root_story_id) { this.hn_root_story_id = hn_root_story_id; }
+	
+	@DynamoDBAttribute(attributeName="hn_root_comment_id") // this is the root COMMENT
+	public long getHNRootCommentId() {return hn_root_comment_id; }
+	public void setHNRootCommentId(long hn_root_comment_id) { this.hn_root_comment_id = hn_root_comment_id; }
 	
 	@DynamoDBAttribute(attributeName="karma_change") 
 	public int getKarmaChange() {return karma_change; }
