@@ -74,7 +74,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public void setHNSince(long hn_since) { this.hn_since = hn_since; }
 	
 	@DynamoDBAttribute(attributeName="seen")  
-	@DynamoDBIndexRangeKey(attributeName="since", globalSecondaryIndexName="registered-seen-index")
+	@DynamoDBIndexRangeKey(attributeName="seen", globalSecondaryIndexName="registered-seen-index")
 	public long getSeen() {return seen; }
 	public void setSeen(long seen) { this.seen = seen; }
 	
