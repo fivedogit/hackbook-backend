@@ -99,6 +99,8 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 			jo.put("hn_target_id", getHNTargetId());
 			jo.put("triggerer", getTriggerer());
 			jo.put("hn_root_id", getHNRootId());
+			jo.put("hn_root_story_id", getHNRootStoryId());
+			jo.put("hn_root_comment_id", getHNRootCommentId());
 			jo.put("karma_change", getKarmaChange());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
