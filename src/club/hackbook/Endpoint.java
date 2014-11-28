@@ -429,7 +429,7 @@ public class Endpoint extends HttpServlet {
 								String hn_since_str = "0";
 								JSONObject hn_user_jo = null;
 								
-								// wait 10 seconds to do first try. This helps prevent read or socket timeout errors on tries 0, 1 and 2 which are unlikely to work anyway.
+								// wait 11 seconds to do first try. This helps prevent read or socket timeout errors on tries 0, 1 and 2 which are unlikely to work anyway.
 								try {
 									java.lang.Thread.sleep(11000);
 								} catch (InterruptedException e) {
@@ -669,6 +669,10 @@ public class Endpoint extends HttpServlet {
 											mapper.save(useritem);
 										
 										user_jo = useritem.getAsJSONObject(client, mapper, dynamo_config);
+										
+										GlobalvarItem gvi = mapper.load(GlobalvarItem.class, "latest_ext_version", dynamo_config);
+										if(gvi != null)
+											jsonresponse.put("latest_ext_version", gvi.getStringValue());
 										jsonresponse.put("response_status", "success");
 										jsonresponse.put("user_jo", user_jo);
 									}

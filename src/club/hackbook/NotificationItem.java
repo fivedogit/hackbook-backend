@@ -18,11 +18,11 @@ import com.amazonaws.util.json.JSONObject;
 // 4. ** a story user wrote was downvoted
 // 5. ** a comment user wrote was commented on
 // 6. ** a story user wrote was commented on
-// 7. a user this user is following posted a story with a url // should be combined with 9?
+// 7. a user this user is following posted a story
 // 8. a user this user is following commented
-// ******* DELETED, COMBINED WITH 7 ********** 9. a user this user is following posted a story without a url // should be combined with 7?
-// A. ?? someone deep-replied to your comment
-// B. ?? someone deep-replied to your story
+// 9. unused
+// A. unused
+// B. unused
 
 
 
