@@ -632,12 +632,25 @@ public class Endpoint extends HttpServlet {
 								{	
 									if (method.equals("getUserSelf")) // I think this might be redundant (or maybe the one below is)
 									{
-										
+										boolean something_needs_updating = false;
+									
+										// check ext version as reported by user.
+										String ext_version = request.getParameter("ext_version");
+										if(ext_version != null && !ext_version.isEmpty()) // covering the bases
+										{
+											if(ext_version.length() == 5 && Global.isWholeNumeric(ext_version.substring(0,1)) && ext_version.substring(1,2).equals(".") && Global.isWholeNumeric(ext_version.substring(2,5))) // is of the form "X.YYY"
+											{
+												if(useritem.getExtVersion() == null || !useritem.getExtVersion().equals(ext_version)) // if the existing value is null, or the verions don't match, update
+												{
+													useritem.setExtVersion(ext_version);
+													something_needs_updating = true;
+												}
+											}
+										}
 										
 										JSONObject user_jo = null;
 										long now = System.currentTimeMillis();
 										
-										boolean something_needs_updating = false;
 										if(now - useritem.getSeen() > 600000) // if it's been > 10 mins since last "seen" update, update it
 										{
 											something_needs_updating = true;

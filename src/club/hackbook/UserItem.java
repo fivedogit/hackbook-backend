@@ -56,6 +56,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private Set<String> following;
 	private boolean hide_embedded_counts;
 	private boolean hide_inline_follow;
+	private String ext_version;
 	
 	@DynamoDBHashKey(attributeName="id") 
 	public String getId() {return id; }
@@ -166,6 +167,10 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	@DynamoDBAttribute(attributeName="hide_inline_follow")  
 	public boolean getHideInlineFollow() {return hide_inline_follow; }  
 	public void setHideInlineFollow(boolean hide_inline_follow) { this.hide_inline_follow = hide_inline_follow; }
+	
+	@DynamoDBAttribute(attributeName="ext_version")  
+	public String getExtVersion() {return ext_version; }  
+	public void setExtVersion(String ext_version) { this.ext_version = ext_version; }
 	
 	@DynamoDBIgnore
 	public boolean isValid(String inc_this_access_token)
