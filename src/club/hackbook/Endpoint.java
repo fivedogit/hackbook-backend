@@ -109,9 +109,7 @@ public class Endpoint extends HttpServlet {
 		// ideally, we'd try with/without slash on all the permutations below.
 		// But that turns 4 lookups into 8, so let's just do the as-is +/- slash
 		if (!url_str.endsWith("/")) {
-			tempset = getHNItemsFromURL(url_str + "/", minutes_ago); // as-is +
-																		// trailing
-																		// "/"
+			tempset = getHNItemsFromURL(url_str + "/", minutes_ago); // as-is + trailing "/"
 			if (tempset != null) {
 				combinedset.addAll(tempset);
 				tempset = null;
@@ -142,10 +140,7 @@ public class Endpoint extends HttpServlet {
 					tempset = null;
 				}
 				tempset = getHNItemsFromURL(
-						"http://www." + url_str.substring(12), minutes_ago); // try
-																				// http
-																				// &&
-																				// www
+						"http://www." + url_str.substring(12), minutes_ago); // try http && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
@@ -159,19 +154,13 @@ public class Endpoint extends HttpServlet {
 					tempset = null;
 				}
 				tempset = getHNItemsFromURL(
-						"http://www." + url_str.substring(8), minutes_ago); // try
-																			// http
-																			// &&
-																			// www
+						"http://www." + url_str.substring(8), minutes_ago); // try http && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
 				tempset = getHNItemsFromURL(
-						"https://www." + url_str.substring(8), minutes_ago); // try
-																				// https
-																				// &&
-																				// www
+						"https://www." + url_str.substring(8), minutes_ago); // try https && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
@@ -193,10 +182,7 @@ public class Endpoint extends HttpServlet {
 					tempset = null;
 				}
 				tempset = getHNItemsFromURL(
-						"https://www." + url_str.substring(11), minutes_ago); // try
-																				// https
-																				// &&
-																				// www
+						"https://www." + url_str.substring(11), minutes_ago); // try https && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
@@ -204,19 +190,13 @@ public class Endpoint extends HttpServlet {
 			} else if (!url_str.startsWith("http://www.")) // http & !www.
 			{
 				tempset = getHNItemsFromURL(
-						"http://www." + url_str.substring(7), minutes_ago); // try
-																			// http
-																			// &&
-																			// www
+						"http://www." + url_str.substring(7), minutes_ago); // try http && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
 				}
 				tempset = getHNItemsFromURL(
-						"https://www." + url_str.substring(7), minutes_ago); // try
-																				// https
-																				// &&
-																				// www
+						"https://www." + url_str.substring(7), minutes_ago); // try https && www
 				if (tempset != null) {
 					combinedset.addAll(tempset); // try http && !www
 					tempset = null;
@@ -609,9 +589,7 @@ public class Endpoint extends HttpServlet {
 			 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
 					 method.equals("followUser") || method.equals("unfollowUser") ||
 					 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
-					 method.equals("resetNewsfeedCount")
-					 // || method.equals("noteItemLikeOrDislike") || method.equals("haveILikedThisItem") || method.equals("haveIDislikedThisItem")
-					 )
+					 method.equals("resetNewsfeedCount") || method.equals("getChat"))
 			 {
 				 try
 				 {
@@ -1108,6 +1086,47 @@ public class Endpoint extends HttpServlet {
 										 }
 										 System.out.println("Endpoint.unfollowUser() end");
 									 }
+									 else if (method.equals("addMessageToChat"))
+									 {
+										 String message = request.getParameter("message");
+										 if(message != null && message.isEmpty())
+										 {
+											 jsonresponse.put("message", "Message was empty.");
+											 jsonresponse.put("response_status", "error"); 
+										 }
+										 else
+										 {
+											 ChatItem ci = new ChatItem();
+											 long now = System.currentTimeMillis();
+											 String now_str = Global.fromDecimalToBase62(7,now);
+											 Random generator = new Random(); 
+											 int r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
+											 String randompart_str = Global.fromDecimalToBase62(3,r);
+											 String message_id = now_str + randompart_str;
+											 ci.setId(message_id);
+											 ci.setUserId(useritem.getId());
+											 ci.setHostname("news.ycombinator.com");
+											 ci.setMSFE(now);
+											 ci.setText(message);
+											 mapper.save(ci);
+											 jsonresponse.put("response_status", "success");
+										 }
+									 }
+									 else if (method.equals("getChat"))
+									 {
+										 HashSet<ChatItem> chat = getChat(10080); // one week in minutes
+										 Iterator<ChatItem> chat_it = chat.iterator();
+										 ChatItem currentitem = null;
+										 JSONArray chat_ja = new JSONArray();
+										 while(chat_it.hasNext())
+										 {
+											 currentitem = chat_it.next();
+											 chat_ja.put(currentitem.getJSON());
+										 }
+										 jsonresponse.put("response_status", "success");
+										 if(chat_ja.length() > 0)
+											 jsonresponse.put("chat_ja", chat_ja);
+									 }
 								 }
 								 else // user had an screenname and this_access_token, but they were not valid. Let the frontend know to get rid of them
 								 {
@@ -1223,6 +1242,40 @@ public class Endpoint extends HttpServlet {
 			}
 		} else {
 			return target_useritem;
+		}
+	}
+	
+	private HashSet<ChatItem> getChat(int minutes_ago) 
+	{
+		DynamoDBQueryExpression<ChatItem> queryExpression = new DynamoDBQueryExpression<ChatItem>()
+				.withIndexName("hostname-msfe-index").withScanIndexForward(true)
+				.withConsistentRead(false);
+
+		// set the user_id part
+		ChatItem key = new ChatItem();
+		key.setHostname("news.ycombinator.com");
+		queryExpression.setHashKeyValues(key);
+
+		if (minutes_ago > 0) {
+			Calendar cal = Calendar.getInstance();
+			cal.add(Calendar.MINUTE, (minutes_ago * -1));
+			long msfe_cutoff = cal.getTimeInMillis();
+			// set the msfe range part
+			Map<String, Condition> keyConditions = new HashMap<String, Condition>();
+			keyConditions.put("msfe", new Condition().withComparisonOperator(ComparisonOperator.GT).withAttributeValueList(new AttributeValue().withN(new Long(msfe_cutoff).toString())));
+			queryExpression.setRangeKeyConditions(keyConditions);
+		}
+
+		// execute
+		List<ChatItem> items = mapper.query(ChatItem.class, queryExpression, dynamo_config);
+		if (items != null && items.size() > 0) {
+			HashSet<ChatItem> returnset = new HashSet<ChatItem>();
+			for (ChatItem item : items) {
+				returnset.add(item);
+			}
+			return returnset;
+		} else {
+			return null;
 		}
 	}
 	
