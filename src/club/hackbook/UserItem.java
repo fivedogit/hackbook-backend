@@ -56,7 +56,9 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	private Set<String> following;
 	private boolean hide_embedded_counts;
 	private boolean hide_inline_follow;
+	private boolean hide_deep_reply_notifications;
 	private String ext_version;
+	
 	
 	@DynamoDBHashKey(attributeName="id") 
 	public String getId() {return id; }
@@ -168,6 +170,10 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 	public boolean getHideInlineFollow() {return hide_inline_follow; }  
 	public void setHideInlineFollow(boolean hide_inline_follow) { this.hide_inline_follow = hide_inline_follow; }
 	
+	@DynamoDBAttribute(attributeName="hide_deep_reply_notifications")  
+	public boolean getHideDeepReplyNotifications() {return hide_deep_reply_notifications; }  
+	public void setHideDeepReplyNotifications(boolean hide_deep_reply_notifications) { this.hide_deep_reply_notifications = hide_deep_reply_notifications; }
+	
 	@DynamoDBAttribute(attributeName="ext_version")  
 	public String getExtVersion() {return ext_version; }  
 	public void setExtVersion(String ext_version) { this.ext_version = ext_version; }
@@ -229,7 +235,8 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 			if(getNewsfeedIds() != null)
 				user_jo.put("newsfeed_ids", getNewsfeedIds());
 			user_jo.put("hide_embedded_counts", this.getHideEmbeddedCounts());
-			user_jo.put("hide_inline_follow", this.getHideInlineFollow());			
+			user_jo.put("hide_inline_follow", this.getHideInlineFollow());	
+			user_jo.put("hide_deep_reply_notifications", this.getHideDeepReplyNotifications());	
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block

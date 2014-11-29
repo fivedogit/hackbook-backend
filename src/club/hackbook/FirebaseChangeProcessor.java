@@ -528,7 +528,65 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			  return;
 		  }
 		  
-		  if(hnii.getParent() == 0)
+		  HNItemItem current_hnii = hnii;
+		  UserItem current_author;
+		  int parentlevel = 0; // 1=parents, 2=grandparents, etc
+		  while(current_hnii.getParent() != 0L)
+		  {
+			  current_hnii = mapper.load(HNItemItem.class, current_hnii.getParent(), dynamo_config); 
+			  if(current_hnii == null)
+				  break;
+			  parentlevel++;
+			  current_author = mapper.load(UserItem.class, current_hnii.getBy(), dynamo_config);
+			  if(current_author == null)
+			  {
+				  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") is not NOT in the database, skipping.");
+			  }
+			  else
+			  {
+				  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") IS in the database, checking if registered and not already notified...");
+				  if(current_author.getRegistered() && !already_notified_users.contains(current_author.getId())) // a user could have multiple parents above this incoming comment. Don't notify them multiple times.
+				  {
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") IS in the database, registered and not already notified. Creating notification.");
+					  if(parentlevel == 1)
+					  {
+						  if(current_hnii.getType().equals("comment"))
+						  {
+							  System.out.println("processNewCommentForFeeds(hnii): Adding replied-to-comment notification.");
+							  createNotificationItem(current_author, "5", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 5, a comment current_author wrote was replied to
+							  already_notified_users.add(current_author.getId());
+						  }
+						  else if(current_hnii.getType().equals("story"))
+						  {
+							  System.out.println("processNewCommentForFeeds(hnii): Adding commented-on-story notification.");
+							  createNotificationItem(current_author, "6", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 6, a story current_author wrote was replied to
+							  already_notified_users.add(current_author.getId());
+						  }
+						  // else, polls etc
+					  }
+					  else // parentlevel > 1
+					  {
+						  if(current_hnii.getType().equals("comment"))
+						  {
+							  System.out.println("processNewCommentForFeeds(hnii): Adding deep replied-to-comment notification.");
+							  createNotificationItem(current_author, "9", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 9, a comment current_author wrote was deep-replied to
+							  already_notified_users.add(current_author.getId());
+						  }
+						  else if(current_hnii.getType().equals("story")) // this is where functionality to notify story posters on deep replies would be added
+						  {
+							  System.out.println("processNewCommentForFeeds(hnii): Skipping deep replied-to-story notification.");
+						  }
+						  // else, polls etc
+					  }
+				  }
+				  else
+				  {
+					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") IS in the database but NOT registered. Skipping notifications.");
+				  }
+			  }
+		  }
+		  
+		/*  if(hnii.getParent() == 0)
 		  {
 			  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was 0L. Can't send reply notifications. Moving on to process follow notifications.");
 		  }
@@ -571,7 +629,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 					  }
 				  }
 			  }
-		  }
+		  }*/
 		  
 		  // check for followers of this comment's \"by\" and alert them
 		  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
@@ -776,7 +834,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			ni.setHNRootCommentId(0L);
 			ni.setTriggerer(triggerer);
 		}
-		else if(type.equals("5") || type.equals("6") || type.equals("8")) // a comment(5) or story(6) you wrote was commented on or a user you're following commented(8). Crawl back to root.
+		else if(type.equals("5") || type.equals("6") || type.equals("8") || type.equals("9")) // a comment you wrote was replied to(5) or deep-replied to(9) or story you wrote was commented on(6) or a user you're following commented(8). Crawl back to root.
 		{
 			ni.setHNTargetId(hn_target_id);
 			System.out.println("Found an item we need to step back on to find root.");
@@ -790,7 +848,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 		}
 		mapper.save(ni);
 		
-		if(type.equals("7") || type.equals("8"))
+		if(type.equals("7") || type.equals("8"))// the two newsfeed types
 		{
 			
 			TreeSet<String> newsfeedset = new TreeSet<String>();
@@ -804,7 +862,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 	    		useritem.setNewsfeedCount(useritem.getNewsfeedCount()+1);
 	    	mapper.save(useritem);
 		}
-		else
+		else // everything else, i.e. the notification types
 		{	
 			TreeSet<String> notificationset = new TreeSet<String>();
 	    	if(useritem.getNotificationIds() != null)

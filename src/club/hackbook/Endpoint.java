@@ -721,7 +721,7 @@ public class Endpoint extends HttpServlet {
 													 }
 												 }
 											 }
-											 else if(which.equals("hide_embedded_counts") || which.equals("hide_inline_follow")) 
+											 else if(which.equals("hide_embedded_counts") || which.equals("hide_inline_follow") || which.equals("hide_deep_reply_notifications")) 
 											 {
 												 if(value.equals("show") || value.equals("hide"))
 												 {
@@ -732,12 +732,20 @@ public class Endpoint extends HttpServlet {
 														 else
 															 useritem.setHideEmbeddedCounts(true);
 													 }
-													 else // which.equals("hide_inline_follow"))
+													 
+													 else if(which.equals("hide_inline_follow"))
 													 {
 														 if(value.equals("show"))
 															 useritem.setHideInlineFollow(false);
 														 else
 															 useritem.setHideInlineFollow(true);
+													 }
+													 else if(which.equals("hide_deep_reply_notifications"))
+													 {
+														 if(value.equals("show"))
+															 useritem.setHideDeepReplyNotifications(false);
+														 else
+															 useritem.setHideDeepReplyNotifications(true);
 													 }
 													 mapper.save(useritem);
 												 }

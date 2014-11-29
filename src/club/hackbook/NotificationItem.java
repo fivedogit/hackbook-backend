@@ -20,7 +20,7 @@ import com.amazonaws.util.json.JSONObject;
 // 6. ** a story user wrote was commented on
 // 7. a user this user is following posted a story
 // 8. a user this user is following commented
-// 9. unused
+// 9. *** a user deep-replied to your *comment*
 // A. unused
 // B. unused
 
