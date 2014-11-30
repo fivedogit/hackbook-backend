@@ -256,9 +256,8 @@ public class Endpoint extends HttpServlet {
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
-		//System.out.println("endpoint.doGet(): entering...");
 		response.setContentType("application/json; charset=UTF-8;");
-		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME
+		response.setHeader("Access-Control-Allow-Origin","*"); //FIXME ?
 		PrintWriter out = response.getWriter();
 		JSONObject jsonresponse = new JSONObject();
 		long timestamp_at_entry = System.currentTimeMillis();
