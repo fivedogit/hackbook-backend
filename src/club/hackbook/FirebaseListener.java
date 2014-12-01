@@ -75,7 +75,7 @@ public class FirebaseListener implements ServletContextListener {
  			  public void onDataChange(DataSnapshot snapshot) {
  				  
  				
- 				 // If I own the firebase lock OR the firebase lock is more than 5 minutes old, take it over.
+ 				 // If I own the firebase lock OR the firebase lock is more than 2.5 minutes old, take it over.
  				 long now = System.currentTimeMillis();
  				 //boolean ihavethepower = true;
  				 
@@ -84,7 +84,7 @@ public class FirebaseListener implements ServletContextListener {
  				 firebase_last_msfe_gvi = mapper.load(GlobalvarItem.class, "firebase_last_msfe", dynamo_config); // we can assume this is never null
 				 if(!firebase_owner_id_gvi.getStringValue().equals(myId))
 				 {
-					 if(firebase_last_msfe_gvi.getNumberValue() > System.currentTimeMillis()-300000) 
+					 if(firebase_last_msfe_gvi.getNumberValue() > System.currentTimeMillis()-150000) 
 					 {
 						 System.out.println("*** I do NOT have the power2! *** myId=" + myId + " owner=" + firebase_owner_id_gvi.getStringValue() + " firebase_last_msfe is " + (System.currentTimeMillis()-firebase_last_msfe_gvi.getNumberValue()) + " old.");
 						 ihavethepower = false;
