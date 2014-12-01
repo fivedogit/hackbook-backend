@@ -367,7 +367,8 @@ public class Endpoint extends HttpServlet {
 							if(useritem == null)
 							{
 								useritem = new UserItem();
-								useritem.setRegistered(false);
+								useritem.setRegistered(false); 
+								useritem.setHideEmbeddedCounts(true);
 							}
 							useritem.setId(screenname);
 							String uuid = UUID.randomUUID().toString().replaceAll("-","");
@@ -386,10 +387,10 @@ public class Endpoint extends HttpServlet {
 							jsonresponse.put("message", "Screenname was null or empty.");
 							jsonresponse.put("response_status", "error");
 						}
-						else
+						else 
 						{
 							UserItem useritem = mapper.load(UserItem.class, screenname, dynamo_config);
-							if(useritem == null)
+							if(useritem == null)	// if the user has gotten to verifyHNUser, then the useritem stub should have just been created at getHNAuthToken. Fail if not.
 							{
 								jsonresponse.put("message", "No user by that screenname was found in the database.");
 								jsonresponse.put("response_status", "error");
@@ -461,8 +462,6 @@ public class Endpoint extends HttpServlet {
 														long future = cal.getTimeInMillis();
 														if(!useritem.getRegistered()) // if user is not yet registered, populate default values
 														{
-															useritem = new UserItem();
-															//useritem.setNotificationIds();
 															useritem.setNotificationCount(0);
 															useritem.setPermissionLevel("user");
 															useritem.setId(screenname);
@@ -470,6 +469,7 @@ public class Endpoint extends HttpServlet {
 															useritem.setSinceHumanReadable(sdf.format(now));
 															useritem.setRegistered(true);
 															useritem.setURLCheckingMode("stealth");
+															useritem.setHideEmbeddedCounts(true);
 														}
 														if(topcolor != null && isValidTopcolor(topcolor))
 															useritem.setHNTopcolor(topcolor);
@@ -1232,7 +1232,8 @@ public class Endpoint extends HttpServlet {
 					target_useritem.setHNKarma(profile_jo.getInt("karma"));
 					target_useritem.setHNSince(profile_jo.getLong("created"));
 					target_useritem.setId(profile_jo.getString("id"));
-					target_useritem.setRegistered(false);
+					target_useritem.setRegistered(false); 
+					target_useritem.setHideEmbeddedCounts(true);
 					target_useritem.setURLCheckingMode("stealth");
 					if (profile_jo.has("about"))
 						target_useritem.setHNAbout(profile_jo
