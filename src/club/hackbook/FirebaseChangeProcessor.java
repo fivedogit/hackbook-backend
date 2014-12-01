@@ -589,51 +589,6 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			  }
 		  }
 		  
-		/*  if(hnii.getParent() == 0)
-		  {
-			  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was 0L. Can't send reply notifications. Moving on to process follow notifications.");
-		  }
-		  else
-		  { 
-			  System.out.print("processNewCommentForFeeds(hnii): Processing comment by " + hnii.getBy() + " for notification feeds. parent=" + hnii.getParent());
-			  HNItemItem parent_hnii = mapper.load(HNItemItem.class, hnii.getParent(), dynamo_config);
-			  if(parent_hnii == null)
-			  {
-				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() seemed valid, but not found in database. Can't process reply notifications. Moving on to process follow notifications.");
-			  }
-			  else
-			  { 
-				  System.out.println("processNewCommentForFeeds(hnii): hnii.getParent() was found in the database. Checking if author (" + parent_hnii.getBy() + ") is in the DB.");
-				  UserItem parent_author = mapper.load(UserItem.class, parent_hnii.getBy(), dynamo_config);
-				  if(parent_author == null)
-				  {
-					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") is not NOT in the database, so we're skipping reply notifications.");
-				  }
-				  else
-				  {
-					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database, checking if they are registered...");
-					  if(parent_author.getRegistered())
-					  {
-						  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database AND registered. Creating notifications.");
-						  if(parent_hnii.getType().equals("comment"))
-						  {
-							  createNotificationItem(parent_author, "5", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 5, a comment parent_author wrote was replied to
-							  already_notified_users.add(parent_author.getId());
-						  }
-						  else if(parent_hnii.getType().equals("story"))
-						  {
-							  createNotificationItem(parent_author, "6", hnii.getId(), hnii.getTime()*1000, hnii.getBy(), 0); // feedable event 6, a story parent_author wrote was replied to
-							  already_notified_users.add(parent_author.getId());
-						  }						  
-					  }
-					  else
-					  {
-						  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + parent_hnii.getBy() + ") IS in the database but NOT registered. Skipping notifications.");
-					  }
-				  }
-			  }
-		  }*/
-		  
 		  // check for followers of this comment's \"by\" and alert them
 		  UserItem author = mapper.load(UserItem.class, hnii.getBy(), dynamo_config);
 		  if(author == null)
