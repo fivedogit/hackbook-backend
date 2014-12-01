@@ -147,10 +147,10 @@ public class Global {
 			{
 				return null;
 			}
-			else if(hnii.getType().equals("story"))
+			else if(hnii.getType().equals("story") || hnii.getType().equals("poll"))
 			{
 				 returnmap.put("comment", lastcomment);
-				 returnmap.put("story", hnii.getId());
+				 returnmap.put("story_or_poll", hnii.getId());
 				 return returnmap;
 			}
 			else if(hnii.getType().equals("comment") && hnii.getParent() != 0L)
@@ -278,7 +278,7 @@ public class Global {
 				 {
 					 //System.out.println("FOUND NON-COMMENT! type=" + currentobject.getString("type") + " setting hn_root_id=" +currentobject.getInt("id"));
 					 returnmap.put("comment", lastcomment);
-					 returnmap.put("story", currentobject.getLong("id"));
+					 returnmap.put("story_or_poll", currentobject.getLong("id"));
 					 return returnmap;
 				 }
 				 else

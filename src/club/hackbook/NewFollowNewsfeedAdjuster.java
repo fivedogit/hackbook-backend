@@ -92,8 +92,8 @@ public class NewFollowNewsfeedAdjuster extends java.lang.Thread {
 					 }
 					 else
 					 {
-						 ni.setHNRootId(roots.get("story"));
-						 ni.setHNRootStoryId(roots.get("story"));
+						 ni.setHNRootId(roots.get("story_or_poll"));
+						 ni.setHNRootStoryOrPollId(roots.get("story_or_poll"));
 						 ni.setHNRootCommentId(roots.get("comment")); // for #6, this should always be the same as hn_target_id
 					 }
 				 }
@@ -102,7 +102,7 @@ public class NewFollowNewsfeedAdjuster extends java.lang.Thread {
 					 notification_id = now_str + randompart_str + "7";
 					 ni.setType("7");
 					 ni.setHNRootId(current.getId());
-					 ni.setHNRootStoryId(current.getId());
+					 ni.setHNRootStoryOrPollId(current.getId());
 					 ni.setHNRootCommentId(0L);
 				 }
 				 ni.setId(notification_id);

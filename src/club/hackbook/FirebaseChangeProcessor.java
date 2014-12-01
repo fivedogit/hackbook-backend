@@ -820,7 +820,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 		if(type.equals("1") || type.equals("2"))
 		{
 			ni.setHNRootId(0L);
-			ni.setHNRootStoryId(0L);
+			ni.setHNRootStoryOrPollId(0L);
 			ni.setHNRootCommentId(0L);
 			ni.setHNTargetId(0L);
 			ni.setTriggerer(null);
@@ -830,7 +830,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 		{
 			ni.setHNTargetId(hn_target_id);
 			ni.setHNRootId(hn_target_id);
-			ni.setHNRootStoryId(hn_target_id);
+			ni.setHNRootStoryOrPollId(hn_target_id);
 			ni.setHNRootCommentId(0L);
 			ni.setTriggerer(triggerer);
 		}
@@ -841,8 +841,8 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			HashMap<String,Long> roots = Global.findRootStoryAndComment(hn_target_id);
 			if(roots == null)
 				return false; // couldn't find root, so bail
-			ni.setHNRootId(roots.get("story"));
-			ni.setHNRootStoryId(roots.get("story"));
+			ni.setHNRootId(roots.get("story_or_poll"));
+			ni.setHNRootStoryOrPollId(roots.get("story_or_poll"));
 			ni.setHNRootCommentId(roots.get("comment")); // for #6, this should always be the same as hn_target_id
 			ni.setTriggerer(triggerer);
 		}

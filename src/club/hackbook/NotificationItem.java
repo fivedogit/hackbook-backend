@@ -37,7 +37,7 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	private long hn_target_id;
 	private String triggerer;
 	private long hn_root_id;
-	private long hn_root_story_id; // same as hn_root_id
+	private long hn_root_story_id; // same as hn_root_id, can also be poll id. "story" means "story or poll"
 	private long hn_root_comment_id;
 	private int karma_change;
 	
@@ -73,9 +73,9 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 	public long getHNRootId() {return hn_root_id; }
 	public void setHNRootId(long hn_root_id) { this.hn_root_id = hn_root_id; }
 	
-	@DynamoDBAttribute(attributeName="hn_root_story_id") // this is the root STORY
-	public long getHNRootStoryId() {return hn_root_story_id; }
-	public void setHNRootStoryId(long hn_root_story_id) { this.hn_root_story_id = hn_root_story_id; }
+	@DynamoDBAttribute(attributeName="hn_root_story_id") // this is the root STORY or POLL ("story" means "story or poll")
+	public long getHNRootStoryOrPollId() {return hn_root_story_id; }
+	public void setHNRootStoryOrPollId(long hn_root_story_id) { this.hn_root_story_id = hn_root_story_id; }
 	
 	@DynamoDBAttribute(attributeName="hn_root_comment_id") // this is the root COMMENT
 	public long getHNRootCommentId() {return hn_root_comment_id; }
@@ -99,7 +99,7 @@ public class NotificationItem implements java.lang.Comparable<NotificationItem> 
 			jo.put("hn_target_id", getHNTargetId());
 			jo.put("triggerer", getTriggerer());
 			jo.put("hn_root_id", getHNRootId());
-			jo.put("hn_root_story_id", getHNRootStoryId());
+			jo.put("hn_root_story_id", getHNRootStoryOrPollId());
 			jo.put("hn_root_comment_id", getHNRootCommentId());
 			jo.put("karma_change", getKarmaChange());
 		} catch (JSONException e) {
