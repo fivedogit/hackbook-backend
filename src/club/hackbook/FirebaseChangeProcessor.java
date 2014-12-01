@@ -528,6 +528,7 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			  return;
 		  }
 		  
+		  String triggerer = hnii.getBy();
 		  HNItemItem current_hnii = hnii;
 		  UserItem current_author;
 		  int parentlevel = 0; // 1=parents, 2=grandparents, etc
@@ -545,7 +546,9 @@ public class FirebaseChangeProcessor extends java.lang.Thread {
 			  else
 			  {
 				  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") IS in the database, checking if registered and not already notified...");
-				  if(current_author.getRegistered() && !already_notified_users.contains(current_author.getId())) // a user could have multiple parents above this incoming comment. Don't notify them multiple times.
+				  if(!current_author.getId().equals(triggerer) // don't notify a person of deep-replies to himself 
+						  && current_author.getRegistered() 
+						  && !already_notified_users.contains(current_author.getId())) // a user could have multiple parents above this incoming comment. Don't notify them multiple times.
 				  {
 					  System.out.println("processNewCommentForFeeds(hnii): author of parent (" + current_hnii.getBy() + ") IS in the database, registered and not already notified. Creating notification.");
 					  if(parentlevel == 1)
