@@ -588,7 +588,7 @@ public class Endpoint extends HttpServlet {
 			 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
 					 method.equals("followUser") || method.equals("unfollowUser") ||
 					 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
-					 method.equals("resetNewsfeedCount") || method.equals("getChat"))
+					 method.equals("resetNewsfeedCount") || method.equals("getChat") || method.equals("submitChatMessage"))
 			 {
 				 try
 				 {
@@ -1100,7 +1100,7 @@ public class Endpoint extends HttpServlet {
 										 }
 										 System.out.println("Endpoint.unfollowUser() end");
 									 }
-									 else if (method.equals("addMessageToChat"))
+									 else if (method.equals("submitChatMessage"))
 									 {
 										 String message = request.getParameter("message");
 										 if(message != null && message.isEmpty())
@@ -1124,22 +1124,45 @@ public class Endpoint extends HttpServlet {
 											 ci.setText(message);
 											 mapper.save(ci);
 											 jsonresponse.put("response_status", "success");
+											 
+											 // if there is valid chat, attach it to the response
+											 HashSet<ChatItem> chat = getChat(10080); // one week in minutes
+											 if(!(chat == null || chat.isEmpty()))
+											 { 
+												 Iterator<ChatItem> chat_it = chat.iterator();
+												 ChatItem currentitem = null;
+												 JSONArray chat_ja = new JSONArray();
+												 while(chat_it.hasNext())
+												 {
+													 currentitem = chat_it.next();
+													 chat_ja.put(currentitem.getJSON());
+												 }
+												 jsonresponse.put("chat_ja", chat_ja);
+											 }
 										 }
 									 }
 									 else if (method.equals("getChat"))
 									 {
 										 HashSet<ChatItem> chat = getChat(10080); // one week in minutes
-										 Iterator<ChatItem> chat_it = chat.iterator();
-										 ChatItem currentitem = null;
-										 JSONArray chat_ja = new JSONArray();
-										 while(chat_it.hasNext())
+										 if(chat == null || chat.isEmpty())
 										 {
-											 currentitem = chat_it.next();
-											 chat_ja.put(currentitem.getJSON());
+											 jsonresponse.put("response_status", "success");
+											 // successful... just empty. don't put a chat_ja object
 										 }
-										 jsonresponse.put("response_status", "success");
-										 if(chat_ja.length() > 0)
-											 jsonresponse.put("chat_ja", chat_ja);
+										 else
+										 { 
+											 Iterator<ChatItem> chat_it = chat.iterator();
+											 ChatItem currentitem = null;
+											 JSONArray chat_ja = new JSONArray();
+											 while(chat_it.hasNext())
+											 {
+												 currentitem = chat_it.next();
+												 chat_ja.put(currentitem.getJSON());
+											 }
+											 jsonresponse.put("response_status", "success");
+											 if(chat_ja.length() > 0)
+												 jsonresponse.put("chat_ja", chat_ja);
+										 }
 									 }
 								 }
 								 else // user had an screenname and this_access_token, but they were not valid. Let the frontend know to get rid of them
