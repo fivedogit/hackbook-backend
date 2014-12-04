@@ -251,7 +251,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 		return user_jo;
 	}
 	
-
+/*
 	@DynamoDBIgnore
 	public HashSet<NotificationItem> getNotificationItems(int minutes_ago, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config) { 
 		// set up an expression to query screename#id
@@ -345,7 +345,7 @@ public class UserItem implements java.lang.Comparable<UserItem> {
 		{
 			return null;
 		}
-	}
+	}*/
 	
 	@DynamoDBIgnore
 	public HashSet<HNItemItem> getHNItemsByd(int minutes_ago, DynamoDBMapper mapper, DynamoDBMapperConfig dynamo_config) { 

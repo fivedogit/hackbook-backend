@@ -23,6 +23,7 @@ import com.amazonaws.util.json.JSONObject;
 // 9. *** a user deep-replied to your *comment*
 // A. unused
 // B. unused
+// C. *** user was mentioned in chat
 
 
 

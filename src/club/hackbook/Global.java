@@ -15,8 +15,8 @@ import com.amazonaws.util.json.JSONObject;
 
 public class Global {
 
-	public static final int NEWSFEED_SIZE_LIMIT = 50;
-	public static final int NOTIFICATIONS_SIZE_LIMIT = 15;
+	public static final int NEWSFEED_SIZE_LIMIT = 40;
+	public static final int NOTIFICATIONS_SIZE_LIMIT = 30;
 	
 	public static boolean isWholeNumeric(String incoming_string) // only works for whole numbers, positive and negative
 	{

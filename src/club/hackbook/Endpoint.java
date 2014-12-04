@@ -587,7 +587,7 @@ public class Endpoint extends HttpServlet {
 			  */
 			 else if (method.equals("getUserSelf") || method.equals("setUserPreference") ||
 					 method.equals("followUser") || method.equals("unfollowUser") ||
-					 method.equals("resetNotificationCount") || method.equals("removeItemFromNotificationIds") ||  method.equals("getNotificationItem") ||
+					 method.equals("resetNotificationCount") || method.equals("deleteNotificationItem") || method.equals("removeItemFromNotificationIds") || method.equals("getNotificationItem") ||
 					 method.equals("resetNewsfeedCount") || method.equals("getChat") || method.equals("submitChatMessage"))
 			 {
 				 try
@@ -786,21 +786,79 @@ public class Endpoint extends HttpServlet {
 										 jsonresponse.put("response_status", "success");
 										//System.out.println("Endpoint resetNewsfeedCount() end);
 									 }
+									 else if (method.equals("deleteNotificationItem"))
+									 {
+										 String notification_id = request.getParameter("notification_id");
+										 if(notification_id == null || notification_id.isEmpty())
+										 {
+											 jsonresponse.put("message", "notification_id value was null or empty");
+											 jsonresponse.put("response_status", "error");
+										 }
+										 else
+										 {
+											 NotificationItem ni = mapper.load(NotificationItem.class, notification_id, dynamo_config);
+											 if(ni != null)
+											 {
+												 if(ni.getUserId().equals(useritem.getId()))
+												 {
+													 mapper.delete(ni);
+													 
+													 // also remove from user's notification set
+													 Set<String> notificationset = useritem.getNotificationIds();
+													 if(notificationset != null)
+													 {
+														 notificationset.remove(request.getParameter("id"));
+														 if(notificationset.isEmpty())
+															 notificationset = null;
+														 useritem.setNotificationIds(notificationset);
+														 mapper.save(useritem);
+													 }
+													 // else the notification set was already null, so it wasn't there to begin with
+													 jsonresponse.put("response_status", "success");
+												 }
+												 else
+												 {
+													 jsonresponse.put("message", "You don't own that notification item.");
+													 jsonresponse.put("response_status", "error");
+												 }
+											 }
+											 else
+											 {
+												 jsonresponse.put("response_status", "success"); // if not found, it was never there to begin with, so return success as it is definitely gone
+											 }
+										 }
+									 }
 									 else if (method.equals("removeItemFromNotificationIds"))
 									 {
-										 //System.out.println("Endpoint.removeItemFromNotificationIds() begin");
-										 Set<String> notificationset = useritem.getNotificationIds();
-										 if(notificationset != null)
+										 System.out.println("Endpoint.removeItemFromNotificationIds() begin");
+										 String notification_id = request.getParameter("notification_id");
+										 if(notification_id == null || notification_id.isEmpty())
 										 {
-											 notificationset.remove(request.getParameter("id"));
-											 if(notificationset.isEmpty())
-												 notificationset = null;
-											 useritem.setNotificationIds(notificationset);
-											 mapper.save(useritem);
+											 jsonresponse.put("message", "notification_id value was null or empty");
+											 jsonresponse.put("response_status", "error");
 										 }
-										 // else notification set was already null, no need to return an error.
-										 jsonresponse.put("response_status", "success");
-										 //System.out.println("Endpoint.removeItemFromNotificationIds() end");
+										 else
+										 {
+											 Set<String> notificationset = useritem.getNotificationIds();
+											 if(notificationset != null)
+											 {
+												 System.out.println("notificationset was not null, size=" + notificationset.size() + " removing "+ notification_id);
+												 Iterator<String> it = notificationset.iterator();
+												 while(it.hasNext())
+												 {
+													 System.out.println(it.next());
+												 }
+												 boolean successful = notificationset.remove(notification_id);
+												 System.out.println("successful=" + successful);
+												 if(notificationset.isEmpty())
+													 notificationset = null;
+												 useritem.setNotificationIds(notificationset);
+												 mapper.save(useritem);
+											 }
+											 // else notification set was already null, no need to return an error.
+											 jsonresponse.put("response_status", "success");
+										 }
+										 System.out.println("Endpoint.removeItemFromNotificationIds() end");
 									 }
 									 else if (method.equals("getNotificationItem"))
 									 {
@@ -1111,8 +1169,8 @@ public class Endpoint extends HttpServlet {
 										 else
 										 {
 											 ChatItem ci = new ChatItem();
-											 long now = System.currentTimeMillis();
-											 String now_str = Global.fromDecimalToBase62(7,now);
+											 long now0 = System.currentTimeMillis();
+											 String now_str = Global.fromDecimalToBase62(7,now0);
 											 Random generator = new Random(); 
 											 int r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
 											 String randompart_str = Global.fromDecimalToBase62(3,r);
@@ -1120,7 +1178,7 @@ public class Endpoint extends HttpServlet {
 											 ci.setId(message_id);
 											 ci.setUserId(useritem.getId());
 											 ci.setHostname("news.ycombinator.com");
-											 ci.setMSFE(now);
+											 ci.setMSFE(now0);
 											 ci.setText(message);
 											 mapper.save(ci);
 											 jsonresponse.put("response_status", "success");
@@ -1144,7 +1202,40 @@ public class Endpoint extends HttpServlet {
 											 {
 												 System.out.println("Chat message from " + useritem.getId() + " contains an @.");
 												 TreeSet<UserItem> mentioned_registered_users = getMentionedUsers(message);
-												 // now set up notifications for these users
+												 Iterator<UserItem> mentionedusers_it = mentioned_registered_users.iterator();
+												 UserItem mentioneduser = null;
+												 long now1 = 0L;
+												 while(mentionedusers_it.hasNext())
+												 {
+													 mentioneduser = mentionedusers_it.next();
+													 now1 = System.currentTimeMillis();
+													 now_str = Global.fromDecimalToBase62(7,now1);
+													 r = generator.nextInt(238327); // this will produce numbers that can be represented by 3 base62 digits
+													 randompart_str = Global.fromDecimalToBase62(3,r);
+													 String notification_id = now_str + randompart_str + "C"; 
+														
+													 NotificationItem ai = new NotificationItem(); 
+													 ai.setId(notification_id);
+													 ai.setActionMSFE(now0); // the chat item got added slightly before this notification item.
+													 ai.setMSFE(now1);
+													 ai.setUserId(mentioneduser.getId());
+													 ai.setType("C");
+													 //ai.setHNTargetId(null);
+													 ai.setTriggerer(useritem.getId());
+													 //ai.setHNRootStoryId();
+													 //ai.setHNRootCommentId();
+													 mapper.save(ai);
+													 
+													 TreeSet<String> notificationset = new TreeSet<String>();
+													 if(mentioneduser.getNotificationIds() != null)
+														 notificationset.addAll(mentioneduser.getNotificationIds());
+													 notificationset.add(notification_id);
+													 while(notificationset.size() > Global.NOTIFICATIONS_SIZE_LIMIT)
+												    		notificationset.remove(notificationset.first());
+													 mentioneduser.setNotificationIds(notificationset);
+													 mentioneduser.setNotificationCount(mentioneduser.getNotificationCount()+1);
+													 mapper.save(mentioneduser);
+												 }
 											 }
 										 }
 									 }
