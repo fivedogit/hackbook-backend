@@ -1139,6 +1139,13 @@ public class Endpoint extends HttpServlet {
 												 }
 												 jsonresponse.put("chat_ja", chat_ja);
 											 }
+											 
+											 if(message.indexOf("@") != -1)
+											 {
+												 System.out.println("Chat message from " + useritem.getId() + " contains an @.");
+												 TreeSet<UserItem> mentioned_registered_users = getMentionedUsers(message);
+												 // now set up notifications for these users
+											 }
 										 }
 									 }
 									 else if (method.equals("getChat"))
@@ -1325,4 +1332,48 @@ public class Endpoint extends HttpServlet {
 		return matcher.matches();
 	}
 
+	public TreeSet<UserItem> getMentionedUsers(String text)
+	{
+		TreeSet<UserItem> mentioned_users = null;
+		if(text.indexOf("@") != -1) // there might be an @ mention here
+		{
+			// screenname must be 2-15 characters, all letters and numbers
+			TreeSet<String> possiblematches = new TreeSet<String>();
+			
+			Pattern p_withtrailer = Pattern.compile("[@]([\\w-]){2,15}"); // match for mentions preceeded by a space where trailed by an acceptable char
+			Matcher matcher1 = p_withtrailer.matcher(text); 
+			while (matcher1.find()) {
+			      possiblematches.add(matcher1.group().substring(1,matcher1.group().length()));
+			    }
+			
+			System.out.println(possiblematches.size());
+			
+			if(possiblematches.size() > 0)
+			{
+				Iterator<String> it = possiblematches.iterator();
+				String currentmatch = null;
+				while(it.hasNext())
+				{
+					currentmatch = it.next();
+					UserItem mentioned_user = mapper.load(UserItem.class, currentmatch, dynamo_config);
+					if(mentioned_user != null && mentioned_user.getRegistered())
+					{
+						if(mentioned_users == null)
+							mentioned_users = new TreeSet<UserItem>();
+						mentioned_users.add(mentioned_user);
+					}
+					else
+					{
+						//System.out.println(" ... not found. Dud.");
+					}
+				}
+			}
+			else
+			{
+				//System.out.print("Possible mentions == 0");
+			}
+		}
+		return mentioned_users;
+	}
+	
 }
