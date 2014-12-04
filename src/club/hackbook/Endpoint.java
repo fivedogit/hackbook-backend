@@ -1184,7 +1184,7 @@ public class Endpoint extends HttpServlet {
 											 jsonresponse.put("response_status", "success");
 											 
 											 // if there is valid chat, attach it to the response
-											 HashSet<ChatItem> chat = getChat(10080); // one week in minutes
+											 HashSet<ChatItem> chat = getChat(4320); // 3 days in minutes
 											 if(!(chat == null || chat.isEmpty()))
 											 { 
 												 Iterator<ChatItem> chat_it = chat.iterator();
@@ -1241,7 +1241,7 @@ public class Endpoint extends HttpServlet {
 									 }
 									 else if (method.equals("getChat"))
 									 {
-										 HashSet<ChatItem> chat = getChat(10080); // one week in minutes
+										 HashSet<ChatItem> chat = getChat(4320); // 3 days in minutes
 										 if(chat == null || chat.isEmpty())
 										 {
 											 jsonresponse.put("response_status", "success");
